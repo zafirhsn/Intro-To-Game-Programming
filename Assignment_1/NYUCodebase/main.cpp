@@ -1,6 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #ifdef _WINDOWS
-	#include <GL/glew.h>
+#include <GL/glew.h>
 #endif
 #include <SDL.h>
 #include <SDL_opengl.h>
@@ -11,9 +11,9 @@
 
 
 #ifdef _WINDOWS
-	#define RESOURCE_FOLDER ""
+#define RESOURCE_FOLDER ""
 #else
-	#define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
+#define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
 #endif
 
 
@@ -45,18 +45,19 @@ int main(int argc, char *argv[])
 	SDL_GL_MakeCurrent(displayWindow, context);
 
 	//Set the size and offset of rendering area (in pixels)	
-	//Doesn't seem that we need this
 	//glViewport(0, 0, 800, 400);
 
 	#ifdef _WINDOWS
 		glewInit();
 	#endif
-	
+
 	//Load the shader program
 	ShaderProgram program;
 	program.Load(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
+	GLuint grass = LoadTexture(RESOURCE_FOLDER"grass.png");
+	GLuint sun = LoadTexture(RESOURCE_FOLDER"sun.png");
+	GLuint bush = LoadTexture(RESOURCE_FOLDER"rpgTile155.png");
 
-	
 	//Load the matrices
 	Matrix projectionMatrix;
 	Matrix modelMatrix;
@@ -67,11 +68,6 @@ int main(int argc, char *argv[])
 
 	//Use the specified program ID
 	glUseProgram(program.programID);
-
-	GLuint grass = LoadTexture(RESOURCE_FOLDER"grass.png");
-
-
-
 
 	SDL_Event event;
 	bool done = false;
@@ -91,24 +87,43 @@ int main(int argc, char *argv[])
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
+		//Define an array of vertex data
+		float treeVertices[] = { -3.0, -1.0, -2.75, -1.0, -2.75, 0.8,
+								 -2.75, 0.8, -3.0, 0.8, -3.0, -1.0 };
+		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, treeVertices);
+		glEnableVertexAttribArray(program.positionAttribute);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(program.positionAttribute);
+
+
+
 		glBindTexture(GL_TEXTURE_2D, grass);
 
-		//Define an array of vertex data
-		float vertices[] = { -3.0, -1.0, -2.75, -1.0, -2.75, 0.8,   
-							 -2.75, 0.8, -3.0, 0.8, -3.0, -1.0,   
-							 3.55, -1.0, -3.55, -1.0, -3.55, -2.0,
-							 3.55, -1.0, -3.55, -2.0, 3.55, -2.0
-		};
-		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, vertices);
+		float groundVertices[] = { 3.55, -1.0, -3.55, -1.0, -3.55, -2.0,
+								   3.55, -1.0, -3.55, -2.0, 3.55, -2.0 };
+		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, groundVertices);
 		glEnableVertexAttribArray(program.positionAttribute);
-
-		float texCoords[] = { 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f };
-		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
+		float groundTexCoords[] = { 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0 };
+		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, groundTexCoords);
 		glEnableVertexAttribArray(program.texCoordAttribute);
-		
-		glDrawArrays(GL_TRIANGLES, 0, 12);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(program.positionAttribute);
+		glDisableVertexAttribArray(program.texCoordAttribute);
 
-		//glVertexAttribPointer(program.positionAttribute, 3, GL_FLOAT, false, 0, triangle);
+
+		modelMatrix.Identity();
+		glBindTexture(GL_TEXTURE_2D, sun);
+		modelMatrix.Translate(0.0, 0.0, 0.0);
+		program.SetModelMatrix(modelMatrix);
+
+		float sunVertices[] = { 3.0, 1.5, 3.0, 1.75, 2.75, 1.5,
+								3.0, 1.75, 2.75, 1.75, 2.75, 1.5 };
+		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, sunVertices);
+		glEnableVertexAttribArray(program.positionAttribute);
+		float sunTexCoords[] = { 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0 };
+		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, sunTexCoords);
+		glEnableVertexAttribArray(program.texCoordAttribute);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDisableVertexAttribArray(program.positionAttribute);
 		glDisableVertexAttribArray(program.texCoordAttribute);
 
