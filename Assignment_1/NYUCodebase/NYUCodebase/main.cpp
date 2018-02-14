@@ -55,13 +55,15 @@ int main(int argc, char *argv[])
 	ShaderProgram program;
 	program.Load(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 	GLuint grass = LoadTexture(RESOURCE_FOLDER"grass.png");
-	GLuint sun = LoadTexture(RESOURCE_FOLDER"sun.png");
+	GLuint sun = LoadTexture(RESOURCE_FOLDER"star.png");
 	GLuint bush = LoadTexture(RESOURCE_FOLDER"rpgTile155.png");
+	GLuint cactus = LoadTexture(RESOURCE_FOLDER"cactus.png");
 
 	//Load the matrices
 	Matrix projectionMatrix;
 	Matrix modelMatrix;
 	Matrix viewMatrix;
+	Matrix sunModelMatrix;
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-3.55f, 3.55f, -2.0f, 2.0f, -1.0f, 1.0f);
@@ -69,10 +71,13 @@ int main(int argc, char *argv[])
 	//Use the specified program ID
 	glUseProgram(program.programID);
 
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	float lastFrameTicks = 0.0;
+	float dist = 0.0;
+	program.SetColor(0.8f, 0.8f, 0.6f, 1.0f);
+	glClearColor(0.2f, 0.5f, 0.90f, 0.9f);
 
 	SDL_Event event;
 	bool done = false;
@@ -83,61 +88,96 @@ int main(int argc, char *argv[])
 			}
 		}
 		glClear(GL_COLOR_BUFFER_BIT);
-		glClearColor(0.2f, 0.5f, 0.85f, 0.9f);
+
 
 		float ticks = (float)SDL_GetTicks() / 1000.0;
 		float elasped = ticks - lastFrameTicks;
 		lastFrameTicks = ticks;
-
-		program.SetColor(0.2f, 0.8f, 0.4f, 1.0f);
+		dist += elasped;
 
 		//Pass the matrices to our program
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
+		glBindTexture(GL_TEXTURE_2D, cactus);
+
 		//Define an array of vertex data
-		float treeVertices[] = { -3.0, -1.0, -2.75, -1.0, -2.75, 0.8,
-								 -2.75, 0.8, -3.0, 0.8, -3.0, -1.0 };
+		float treeVertices[] = {
+			-3.0, -1.0, //bottom left
+			-2.25, -1.0, //bottom right
+			-2.25, 0.8, //top right
+			-2.25, 0.8, //top right
+			-3.0, 0.8, //top left
+			-3.0, -1.0  //bottom left
+		};
 		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, treeVertices);
 		glEnableVertexAttribArray(program.positionAttribute);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisableVertexAttribArray(program.positionAttribute);
 
-
-
-		glBindTexture(GL_TEXTURE_2D, grass);
-
-		float groundVertices[] = { 3.55, -1.0, -3.55, -1.0, -3.55, -2.0,
-									3.55, -1.0, -3.55, -2.0, 3.55, -2.0 };
-		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, groundVertices);
-		glEnableVertexAttribArray(program.positionAttribute);
-		float groundTexCoords[] = { 0.0, -1.0,
-									3.55, -1.0,
-									3.55, 0.0,
-								  
-									0.0, -1.0,
-									3.55, 0.0,
-									0.0, 0.0
-									 };
-		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, groundTexCoords);
+		float treeTexCoords[] = {
+			0.0, 1.0, //bottom left
+			1.0, 1.0, //bottom right
+			1.0, 0.0, //top right
+			1.0, 0.0, //top right
+			0.0, 0.0, //top left
+			0.0, 1.0 //bottom left
+		};
+		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, treeTexCoords);
 		glEnableVertexAttribArray(program.texCoordAttribute);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDisableVertexAttribArray(program.positionAttribute);
 		glDisableVertexAttribArray(program.texCoordAttribute);
 
 
-		modelMatrix.Identity();
-		glBindTexture(GL_TEXTURE_2D, sun);
-		modelMatrix.Translate(0.0, 0.0, 0.0);
-		program.SetModelMatrix(modelMatrix);
+		glBindTexture(GL_TEXTURE_2D, grass);
 
-		float sunVertices[] = { 3.0, 1.5, 3.0, 1.75, 2.75, 1.5,
-								3.0, 1.75, 2.75, 1.75, 2.75, 1.5 };
+		float groundVertices[] = { 3.55, -1.0, -3.55, -1.0, -3.55, -2.0,
+								   3.55, -1.0, -3.55, -2.0, 3.55, -2.0 };
+		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, groundVertices);
+		glEnableVertexAttribArray(program.positionAttribute);
+		float groundTexCoords[] = {
+			0.0, -1.0,
+			3.55, -1.0,
+			3.55, 0.0,
+
+			0.0, -1.0,
+			3.55, 0.0,
+			0.0, 0.0
+		};
+		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, groundTexCoords);
+		glEnableVertexAttribArray(program.texCoordAttribute);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(program.positionAttribute);
+		glDisableVertexAttribArray(program.texCoordAttribute);
+
+		//CREATING THE SUN
+		sunModelMatrix.Identity();
+		glBindTexture(GL_TEXTURE_2D, sun);
+		sunModelMatrix.Translate(-2.0, 0.0, 0.0);
+		sunModelMatrix.Translate(dist, 0.0, 0.0);
+		if (dist > 2.0) { 
+			dist = 0; 
+			sunModelMatrix.Translate(-2.0, 0.0, 0.0);
+			sunModelMatrix.Translate(dist, 0.0, 0.0);
+		}
+
+		program.SetModelMatrix(sunModelMatrix);
+
+		float sunVertices[] = { 3.0, 1.5, 3.0, 2.0, 2.5, 1.5,
+								3.0, 2.0, 2.5, 2.0, 2.5, 1.5 };
 		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, sunVertices);
 		glEnableVertexAttribArray(program.positionAttribute);
 		
-		float sunTexCoords[] = { 0.0, 0.25, 0.25, 0.25, 0.25, 0, 0.0, 0.25, 0.25, 0, 0.0, 0.0 };
+		float sunTexCoords[] = {
+			1.0, -1.0, //bottom right
+			1.0, 0.0, //top right
+			0.0, -1.0, //bottom left
+			
+			1.0, 0.0, //top right
+			0.0, 0.0,  //top left
+			0.0, -1.0 //bottom left
+		};
+
 		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, sunTexCoords);
 		glEnableVertexAttribArray(program.texCoordAttribute);
 		
@@ -147,13 +187,29 @@ int main(int argc, char *argv[])
 		glDisableVertexAttribArray(program.texCoordAttribute);
 
 
+
+		//CREATING THE BUSH
 		glBindTexture(GL_TEXTURE_2D, bush);
 
-		float bushVertices[] = { -1.0, -1.0, -1.5, -1.0, -1.5, -0.5, -1.5, -0.5, -1.0, -0.5, -1.0, -1.0 };
+		float bushVertices[] = { 
+			-1.0, -1.0, //bottom right
+			-1.5, -1.0, //bottom left
+ 			-1.5, -0.5, //top left
+			-1.5, -0.5, //top left
+			-1.0, -0.5, //top right
+			-1.0, -1.0  //bottom right
+		};
 		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, bushVertices);
 		glEnableVertexAttribArray(program.positionAttribute);
 
-		float bushTexCoords[] = { 0.0, 1.0, 1.0, 1.0, 1.0, 0, 0.0, 1.0, 1.0, 0, 0.0, 0.0 };
+		float bushTexCoords[] = { 
+			1.0, 1.0, //bottom right
+			0.0, 1.0, //bottom left
+			0.0, 0.0,  //top left 
+			0.0, 0.0,  //top left 
+			1.0, 0.0,  //top right
+			1.0, 1.0  //bottom right
+		};
 		glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, bushTexCoords);
 		glEnableVertexAttribArray(program.texCoordAttribute);
 
