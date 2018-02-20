@@ -1,20 +1,4 @@
-﻿  ShaderProgram.cpp
-  Matrix.cpp
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(148): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(149): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(150): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(151): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(165): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(166): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(167): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(168): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(172): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(173): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(174): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(175): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(213): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\matrix.cpp(214): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-  main.cpp
+﻿  main.cpp
 c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(84): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
 c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(84): warning C4305: 'initializing': truncation from 'double' to 'float'
 c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(86): warning C4305: 'initializing': truncation from 'double' to 'float'
@@ -46,5 +30,6 @@ c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\ma
 c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(241): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(245): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(249): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
+c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(270): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 2\nyucodebase\nyucodebase\main.cpp(285): warning C4305: '=': truncation from 'double' to 'float'
   NYUCodebase.vcxproj -> C:\Users\zafir\Intro-To-Game-Programming\Assignment 2\NYUCodebase\Debug\NYUCodebase.exe

@@ -190,9 +190,9 @@ int main(int argc, char *argv[])
 		glDisableVertexAttribArray(program.positionAttribute);
 
 		//Move the CPU paddle on the right
-		rightPadMatrix.Translate(0.0, (sin(angle) * 0.0008) * ydirection, 0.0);
-		rightPadTop += (sin(angle) * 0.0008) * ydirection;
-		rightPadBottom += (sin(angle) * 0.0008) * ydirection;
+		rightPadMatrix.Translate(0.0, (sin(angle) * 0.0009) * ydirection, 0.0);
+		rightPadTop += (sin(angle) * 0.0009) * ydirection;
+		rightPadBottom += (sin(angle) * 0.0009) * ydirection;
 
 		program.SetModelMatrix(rightPadMatrix);
 
@@ -262,11 +262,33 @@ int main(int argc, char *argv[])
 		}
 
 		if (ballLeft <= -5.0) {
-			//The right player won
+			std::cout << "Right player has won!";
+			ballMatrix.Identity();
+			rightPadMatrix.Identity();
+			angle = 0.0;
+			rightPadLeft = 4.75;
+			rightPadTop = 0.3;
+			rightPadBottom = -1.0;
+
+			ballTop = 0.5;
+			ballBottom = 0.25;
+			ballRight = 0.0;
+			ballLeft = -0.25;
 		}
 		
 		if (ballRight >= 5.0) {
-			//The left player won
+			std::cout << "Left player has won!";
+			ballMatrix.Identity();
+			rightPadMatrix.Identity();
+			angle = 0.0;
+			rightPadLeft = 4.75;
+			rightPadTop = 0.3;
+			rightPadBottom = -1.0;
+
+			ballTop = 0.5;
+			ballBottom = 0.25;
+			ballRight = 0.0;
+			ballLeft = -0.25;
 		}
 
 		program.SetModelMatrix(ballMatrix);
