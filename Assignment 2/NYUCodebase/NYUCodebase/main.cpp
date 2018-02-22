@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
 	int xdirection = 1;
 	int ydirection = 1;
 	float angle = 0.0;
+	int winner = -1; //left is 0, right is 1
 
 	//Top and bottom of bars
 	float topBarBottom = 2.75;
@@ -119,6 +120,7 @@ int main(int argc, char *argv[])
 		//Use the specified program ID
 		glUseProgram(program.programID);
 
+
 		//Keeping time
 		float ticks = (float)SDL_GetTicks() / 1000.0;
 		float elasped = ticks - lastFrameTicks;
@@ -129,6 +131,7 @@ int main(int argc, char *argv[])
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
+		
 
 		float topBarVertices[] = {
 			-4.75, 2.75, //bottom left
@@ -157,6 +160,10 @@ int main(int argc, char *argv[])
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glDisableVertexAttribArray(program.positionAttribute);
 
+		program.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		if (winner == 0) {
+			program.SetColor(0.2, 0.8, 0.2, 1.0);
+		}
 
 		//Define an array of vertex data
 		float leftPadVertices[] = {
@@ -195,6 +202,12 @@ int main(int argc, char *argv[])
 		rightPadBottom += (sin(angle) * 0.0009) * ydirection;
 
 		program.SetModelMatrix(rightPadMatrix);
+
+
+		program.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		if (winner == 1) {
+			program.SetColor(0.2, 0.8, 0.2, 1.0);
+		}
 
 		float rightPadVertices[] = {
 			 5.00, -1.0, //bottom left
@@ -264,6 +277,7 @@ int main(int argc, char *argv[])
 		if (ballLeft <= -5.0) {
 			std::cout << "Right player has won!";
 			ballMatrix.Identity();
+			winner = 1;
 			rightPadMatrix.Identity();
 			angle = 0.0;
 			rightPadLeft = 4.75;
@@ -279,6 +293,7 @@ int main(int argc, char *argv[])
 		if (ballRight >= 5.0) {
 			std::cout << "Left player has won!";
 			ballMatrix.Identity();
+			winner = 0;
 			rightPadMatrix.Identity();
 			angle = 0.0;
 			rightPadLeft = 4.75;
@@ -293,6 +308,7 @@ int main(int argc, char *argv[])
 
 		program.SetModelMatrix(ballMatrix);
 
+		program.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 		float ballVertices[] = { 
 			0.0, 0.25, 
 			0.0, 0.50, 

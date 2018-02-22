@@ -1,9 +1,1 @@
-﻿  main.cpp
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(93): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(113): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(113): warning C4305: 'initializing': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(135): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(135): warning C4305: 'initializing': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(146): warning C4838: conversion from 'double' to 'float' requires a narrowing conversion
-c:\users\zafir\intro-to-game-programming\assignment_1\nyucodebase\nyucodebase\main.cpp(146): warning C4305: 'initializing': truncation from 'double' to 'float'
-  NYUCodebase.vcxproj -> C:\Users\zafir\Intro-To-Game-Programming\Assignment_1\NYUCodebase\Debug\NYUCodebase.exe
+﻿  NYUCodebase.vcxproj -> C:\Users\zafir\Intro-To-Game-Programming\Assignment_1\NYUCodebase\Debug\NYUCodebase.exe
