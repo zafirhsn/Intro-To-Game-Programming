@@ -8,7 +8,9 @@
 #include "ShaderProgram.h"
 #include "Matrix.h"
 #include "stb_image.h"
-
+//60 FPS (1 / 60) (update sixty times a second)
+#define FIXED_TIMESTEP 0.01666666
+#define MAX_TIMESTEPS 6
 
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
@@ -40,7 +42,7 @@ int main(int argc, char *argv[])
 {
 	SDL_Init(SDL_INIT_VIDEO);
 
-	displayWindow = SDL_CreateWindow("Assignment 3: space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 360, SDL_WINDOW_OPENGL);
+	displayWindow = SDL_CreateWindow("Assignment 3: space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640 * 2, 360 * 2, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
 	SDL_GL_MakeCurrent(displayWindow, context);
 
@@ -49,7 +51,7 @@ int main(int argc, char *argv[])
 #endif
 
 	//Set the size and offset of rendering area (in pixels)	
-	glViewport(0, 0, 640, 360);
+	glViewport(0, 0, 640 * 2, 360 * 2);
 
 	//Load the shader program
 	ShaderProgram program;
@@ -60,6 +62,7 @@ int main(int argc, char *argv[])
 	Matrix projectionMatrix;
 	Matrix modelMatrix;
 	Matrix viewMatrix;
+	Matrix shipModelMatrix;
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-5.33f, 5.33f, -3.0f, 3.0f, -1.0f, 1.0f);
@@ -70,13 +73,19 @@ int main(int argc, char *argv[])
 
 	//This is how we will keep track of time
 	float lastFrameTicks = 0.0;
-	float dist = 0.0;
+	float angle = 0.0; 
+	float accumulator = 0.0;
 
 	//Set the color for untextured polygons
 	program.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	//Set clear color of screen
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	float shipTop = 0.25;
+	float shipBottom = 0.0;
+	float shipLeft = 0.0;
+	float shipRight = 0.25;
 
 
 	SDL_Event event;
@@ -92,16 +101,59 @@ int main(int argc, char *argv[])
 		//Use the specified program ID
 		glUseProgram(program.programID);
 
-		//Keeping time
 		float ticks = (float)SDL_GetTicks() / 1000.0;
-		float elasped = ticks - lastFrameTicks;
+		float elapsed = ticks - lastFrameTicks;
 		lastFrameTicks = ticks;
-		dist += elasped;
+
+		//Keeping time
+		/*elapsed += accumulator;
+		if (elapsed < FIXED_TIMESTEP) {
+			accumulator = elapsed;
+			continue;
+		}
+		while (elapsed >= FIXED_TIMESTEP) {
+			//Update(FIXED_TIMESTEP);
+			elapsed -= FIXED_TIMESTEP;
+		}
+		accumulator = elapsed;
+		//Render();
+		*/
 
 		//Pass the matrices to our program
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
+
+		const Uint8 *keys = SDL_GetKeyboardState(NULL);
+
+		//Player 1 moves the left paddle
+		if (keys[SDL_SCANCODE_RIGHT]) {
+			shipModelMatrix.Translate(elapsed * 2.0, 0.0, 0.0);
+			shipLeft += elapsed * 2.0;
+			shipRight += elapsed * 2.0;
+		}
+		if (keys[SDL_SCANCODE_LEFT]) {
+			shipModelMatrix.Translate(elapsed * -2.0, 0.0, 0.0);
+			shipLeft -= elapsed * 2.0;
+			shipRight -= elapsed * 2.0;
+		}
+
+		program.SetModelMatrix(shipModelMatrix);
+
+		float shipVertices[] = {
+			0.0, 0.0, //bottom left
+			0.25, 0.0, //bottom right
+			0.25, 0.25, //top right
+			0.25, 0.25, //top right
+			0.0, 0.25, //top left
+			0.0, 0.0 //bottom left
+		};
+
+		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, shipVertices);
+		glEnableVertexAttribArray(program.positionAttribute);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(program.positionAttribute);
+
 
 		SDL_GL_SwapWindow(displayWindow);
 	}

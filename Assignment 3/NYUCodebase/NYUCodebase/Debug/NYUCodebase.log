@@ -1,20 +1,9 @@
-﻿  ShaderProgram.cpp
-  Matrix.cpp
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(148): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(149): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(150): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(151): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(165): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(166): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(167): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(168): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(172): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(173): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(174): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(175): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(213): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\matrix.cpp(214): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-  main.cpp
-c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(96): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
-  NYUCodebase.vcxproj -> C:\Users\zafir\Intro-To-Game-Programming\Assignment 3\NYUCodebase\Debug\NYUCodebase.exe
+﻿  main.cpp
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(104): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(133): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(134): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(135): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(138): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(139): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(140): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+  NYUCodebase.vcxproj -> C:\Users\zafirhsn\Intro-To-Game-Programming\Assignment 3\NYUCodebase\Debug\NYUCodebase.exe
