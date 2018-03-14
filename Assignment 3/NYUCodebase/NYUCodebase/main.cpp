@@ -8,6 +8,9 @@
 #include "ShaderProgram.h"
 #include "Matrix.h"
 #include "stb_image.h"
+#include <vector>
+#include <windows.h>
+
 //60 FPS (1 / 60) (update sixty times a second)
 #define FIXED_TIMESTEP 0.01666666
 #define MAX_TIMESTEPS 6
@@ -20,6 +23,7 @@
 
 
 SDL_Window* displayWindow;
+
 
 GLuint LoadTexture(const char *filePath) {
 	int w, h, comp;
@@ -38,11 +42,94 @@ GLuint LoadTexture(const char *filePath) {
 	return retTexture;
 }
 
+
+class SheetSprite {
+public:
+	SheetSprite() {};
+	SheetSprite(unsigned int textureID, float u, float v, float width, float height, float size) : textureID(textureID), u(u), v(v), width(width), height(height), size(size) {}
+
+	void Draw(ShaderProgram *program);
+
+	float size;
+	unsigned int textureID;
+	float u;
+	float v;
+	float height;
+	float width;
+};
+
+void SheetSprite::Draw(ShaderProgram *program) {
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	GLfloat texCoords[] = {
+		u, v + height,
+		u + width, v,
+		u, v,
+		u + width, v,
+		u, v + height,
+		u + width, v + height
+	};
+
+	float aspect = width / height; 
+	float vertices[] = {
+		-0.5f * size * aspect, -0.5f * size,
+		0.5f * size * aspect, 0.5f * size,
+		-0.5f * size * aspect, 0.5f * size,
+		0.5f * size * aspect, 0.5f * size,
+		-0.5f * size * aspect, -0.5f * size,
+		0.5f * size * aspect, -0.5f * size
+	};
+
+	//draw our arrays
+	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
+	glEnableVertexAttribArray(program->positionAttribute);
+	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
+	glEnableVertexAttribArray(program->texCoordAttribute);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(program->positionAttribute);
+	glDisableVertexAttribArray(program->texCoordAttribute);
+}
+
+//Simple vector class
+class Vector3 {
+public:
+	Vector3() {};
+	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
+
+	float x;
+	float y;
+	float z;
+};
+
+class Entity {
+public:
+	Entity() {};
+	void Draw(ShaderProgram *program) {
+		sprite.Draw(program);
+	}
+
+	void Update(float elapsed) {
+
+	}
+	Vector3 position;
+	Vector3 velocity;
+	Vector3 size;
+
+	float rotation;
+
+	SheetSprite sprite;
+};
+
+void Render(ShaderProgram *program) {
+
+
+}
+
 int main(int argc, char *argv[])
 {
 	SDL_Init(SDL_INIT_VIDEO);
 
-	displayWindow = SDL_CreateWindow("Assignment 3: space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640 * 2, 360 * 2, SDL_WINDOW_OPENGL);
+	displayWindow = SDL_CreateWindow("Assignment 3: Space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640 * 2, 360 * 2, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
 	SDL_GL_MakeCurrent(displayWindow, context);
 
@@ -56,13 +143,38 @@ int main(int argc, char *argv[])
 	//Load the shader program
 	ShaderProgram program;
 	//WE'RE GONNA WANT THE TEXTURED VERTEX SHADER AND FRAGMENT SHADER
-	program.Load(RESOURCE_FOLDER"vertex.glsl", RESOURCE_FOLDER"fragment.glsl");
+	program.Load(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
+
+	//Setting up the Sprite sheet
+	GLuint spriteSheetTexture = LoadTexture("sheet.png");
+	//playerShip2_red.png (line 224)
+	Entity player; 
+	player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
+	player.position.x = 0;
+	player.position.y = 0;
+	player.position.z = 0;
+	player.size.x = 112.0 / 1024.0;
+	player.size.y = 75.0 / 1024.0;
+	player.size.z = 0;
+
+	//enemyBlack3.png (line 55)
+	SheetSprite enemy1 = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+
+	//enemyBlue4.png (line 4)
+	SheetSprite enemy2 = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
+
+	//enemyGreen5.png (line 70)
+	SheetSprite enemy3 = SheetSprite(spriteSheetTexture, 408.0/ 1024.0, 907.0 / 1024.0, 97.0/ 1024.0, 84.0/ 1024.0, 0.3);
+
+	//enemyRed1.png (line 74)
+	SheetSprite enemy4 = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0/ 1024.0, 84.0 / 1024.0, 0.3);
 
 	//Load the matrices
 	Matrix projectionMatrix;
 	Matrix modelMatrix;
 	Matrix viewMatrix;
-	Matrix shipModelMatrix;
+	Matrix playerModelMatrix;
+	Matrix enemyModelMatrix;
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-5.33f, 5.33f, -3.0f, 3.0f, -1.0f, 1.0f);
@@ -81,12 +193,10 @@ int main(int argc, char *argv[])
 
 	//Set clear color of screen
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		
+	playerModelMatrix.Translate(0, -2.25, 0);
 
-	float shipTop = 0.25;
-	float shipBottom = 0.0;
-	float shipLeft = 0.0;
-	float shipRight = 0.25;
-
+	program.SetModelMatrix(playerModelMatrix);
 
 	SDL_Event event;
 	bool done = false;
@@ -105,7 +215,7 @@ int main(int argc, char *argv[])
 		float elapsed = ticks - lastFrameTicks;
 		lastFrameTicks = ticks;
 
-		//Keeping time
+		//Keeping time with a fixed timestep
 		/*elapsed += accumulator;
 		if (elapsed < FIXED_TIMESTEP) {
 			accumulator = elapsed;
@@ -128,31 +238,22 @@ int main(int argc, char *argv[])
 
 		//Player 1 moves the left paddle
 		if (keys[SDL_SCANCODE_RIGHT]) {
-			shipModelMatrix.Translate(elapsed * 2.0, 0.0, 0.0);
-			shipLeft += elapsed * 2.0;
-			shipRight += elapsed * 2.0;
+			playerModelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
 		}
 		if (keys[SDL_SCANCODE_LEFT]) {
-			shipModelMatrix.Translate(elapsed * -2.0, 0.0, 0.0);
-			shipLeft -= elapsed * 2.0;
-			shipRight -= elapsed * 2.0;
+			playerModelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
 		}
 
-		program.SetModelMatrix(shipModelMatrix);
+		program.SetModelMatrix(playerModelMatrix);
 
-		float shipVertices[] = {
-			0.0, 0.0, //bottom left
-			0.25, 0.0, //bottom right
-			0.25, 0.25, //top right
-			0.25, 0.25, //top right
-			0.0, 0.25, //top left
-			0.0, 0.0 //bottom left
-		};
+		player.Draw(&program);
 
-		glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, shipVertices);
-		glEnableVertexAttribArray(program.positionAttribute);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		glDisableVertexAttribArray(program.positionAttribute);
+		program.SetModelMatrix(modelMatrix); 
+
+		enemy1.Draw(&program);
+		enemy2.Draw(&program);
+		enemy3.Draw(&program);
+		enemy4.Draw(&program);
 
 
 		SDL_GL_SwapWindow(displayWindow);

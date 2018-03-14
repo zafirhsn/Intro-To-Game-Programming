@@ -1,9 +1,14 @@
 ﻿  main.cpp
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(104): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(133): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(134): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(135): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(138): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(139): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-c:\users\zafirhsn\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(140): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-  NYUCodebase.vcxproj -> C:\Users\zafirhsn\Intro-To-Game-Programming\Assignment 3\NYUCodebase\Debug\NYUCodebase.exe
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(152): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(158): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(161): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(164): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(167): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(212): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(239): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\zafir\intro-to-game-programming\assignment 3\nyucodebase\nyucodebase\main.cpp(242): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  Generating Code...
+  Skipping... (no relevant changes detected)
+  ShaderProgram.cpp
+  Matrix.cpp
+  NYUCodebase.vcxproj -> C:\Users\zafir\Intro-To-Game-Programming\Assignment 3\NYUCodebase\Debug\NYUCodebase.exe
