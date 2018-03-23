@@ -24,7 +24,7 @@
 
 SDL_Window* displayWindow;
 
-
+//Function to load texture as unsigned int
 GLuint LoadTexture(const char *filePath) {
 	int w, h, comp;
 	unsigned char* image = stbi_load(filePath, &w, &h, &comp, STBI_rgb_alpha);
@@ -42,7 +42,7 @@ GLuint LoadTexture(const char *filePath) {
 	return retTexture;
 }
 
-
+//Sprite class to make objects out of sprite sheets
 class SheetSprite {
 public:
 	SheetSprite() {};
@@ -58,6 +58,7 @@ public:
 	float width;
 };
 
+//Draw, bind texture to sprite and draw it
 void SheetSprite::Draw(ShaderProgram *program) {
 	glBindTexture(GL_TEXTURE_2D, textureID);
 
@@ -100,6 +101,47 @@ public:
 	float y;
 	float z;
 };
+
+void DrawText(ShaderProgram *program, int fontTexture, std::string text, float size, float spacing) {
+	float texture_size = 1.0 / 16.0f;
+	std::vector<float> vertexData;
+	std::vector<float> texCoordData;
+	for (int i = 0; i < text.size(); i++) {
+		int spriteIndex = (int)text[i];
+		float texture_x = (float)(spriteIndex % 16) / 16.0f;
+		float texture_y = (float)(spriteIndex / 16) / 16.0f;
+		vertexData.insert(vertexData.end(), {
+			((size + spacing) * i) + (-0.5f * size), 0.5f * size,
+			((size + spacing) * i) + (-0.5f * size), -0.5f * size,
+			((size + spacing) * i) + (0.5f * size), 0.5f * size,
+			((size + spacing) * i) + (0.5f * size), -0.5f * size,
+			((size + spacing) * i) + (0.5f * size), 0.5f * size,
+			((size + spacing) * i) + (-0.5f * size), -0.5f * size,
+			});
+		texCoordData.insert(texCoordData.end(), {
+			texture_x, texture_y,
+			texture_x, texture_y + texture_size,
+			texture_x + texture_size, texture_y,
+			texture_x + texture_size, texture_y + texture_size,
+			texture_x + texture_size, texture_y,
+			texture_x, texture_y + texture_size,
+			});
+	}
+	glBindTexture(GL_TEXTURE_2D, fontTexture);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	// draw this data (use the .data() method of std::vector to get pointer to data)
+	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());
+	glEnableVertexAttribArray(program->positionAttribute);
+	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoordData.data());
+	glEnableVertexAttribArray(program->texCoordAttribute);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6 * text.size());
+
+	glDisableVertexAttribArray(program->positionAttribute);
+	glDisableVertexAttribArray(program->texCoordAttribute);
+
+}
 
 class Entity {
 public:
@@ -150,12 +192,14 @@ int main(int argc, char *argv[])
 	//playerShip2_red.png (line 224)
 	Entity player; 
 	player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
+	/*
 	player.position.x = 0;
 	player.position.y = 0;
 	player.position.z = 0;
 	player.size.x = 112.0 / 1024.0;
 	player.size.y = 75.0 / 1024.0;
 	player.size.z = 0;
+	*/
 
 	//enemyBlack3.png (line 55)
 	SheetSprite enemy1 = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
@@ -194,8 +238,8 @@ int main(int argc, char *argv[])
 	//Set clear color of screen
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		
+	//Setup initial player position
 	playerModelMatrix.Translate(0, -2.25, 0);
-
 	program.SetModelMatrix(playerModelMatrix);
 
 	SDL_Event event;
