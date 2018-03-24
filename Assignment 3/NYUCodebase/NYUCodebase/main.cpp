@@ -130,6 +130,7 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
 	glBindTexture(GL_TEXTURE_2D, fontTexture);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
+
 	// draw this data (use the .data() method of std::vector to get pointer to data)
 	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());
 	glEnableVertexAttribArray(program->positionAttribute);
@@ -167,6 +168,69 @@ void Render(ShaderProgram *program) {
 
 }
 
+class GameState {
+public:
+	Entity player;
+	Entity enemies[12];
+	Entity bullets[10];
+	int score;
+};
+
+enum GameMode { STATE_MAIN_MENU, STATE_GAME_LEVEL, STATE_GAME_OVER };
+
+GameMode mode;
+GameState state;
+
+
+//----------PROCESS INPUT FUNCTIONS------------
+
+//Process regular player movement in game
+void ProcessGameInput(Matrix& modelMatrix, float elapsed) {
+	const Uint8 *keys = SDL_GetKeyboardState(NULL);
+
+	if (keys[SDL_SCANCODE_RIGHT]) {
+		modelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
+	}
+	if (keys[SDL_SCANCODE_LEFT]) {
+		modelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
+	}
+
+}
+
+//Process events for menu, only polling events
+void ProcessMenuPollingInput(SDL_Event& event) {
+	if (event.type == SDL_KEYDOWN) {
+		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+			mode = STATE_GAME_LEVEL;
+		}
+	}
+}
+
+//Process polling events for game (shooting)
+void ProcessGamePollingInput(SDL_Event& event, Matrix& modelMatrix, bool& prevPressed) {
+	if (event.type == SDL_KEYDOWN && prevPressed == false) {
+		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+			modelMatrix.Translate(0.25, 0, 0);
+			prevPressed = true;
+		}
+	}
+	else if (event.type == SDL_KEYUP) {
+		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+			prevPressed = false;
+		}
+	}
+}
+
+//-----PROCESS INPUT FOR ENTIRE GAME------
+void ProcessInput(Matrix& modelMatrix, float elapsed) {
+	switch (mode) {
+	case STATE_MAIN_MENU:
+		break;
+	case STATE_GAME_LEVEL:
+		ProcessGameInput(modelMatrix, elapsed);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -202,7 +266,8 @@ int main(int argc, char *argv[])
 	*/
 
 	//enemyBlack3.png (line 55)
-	SheetSprite enemy1 = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	Entity enemy;
+	enemy.sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
 
 	//enemyBlue4.png (line 4)
 	SheetSprite enemy2 = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
@@ -242,14 +307,27 @@ int main(int argc, char *argv[])
 	playerModelMatrix.Translate(0, -2.25, 0);
 	program.SetModelMatrix(playerModelMatrix);
 
+	mode = STATE_GAME_LEVEL;
+
 	SDL_Event event;
 	bool done = false;
+	bool spaceDown = false;
 	while (!done) {
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
 				done = true;
 			}
+
+			switch (mode) {
+			case STATE_MAIN_MENU:
+				ProcessMenuPollingInput(event);
+				spaceDown = true;
+			case STATE_GAME_LEVEL: 
+				ProcessGamePollingInput(event, playerModelMatrix, spaceDown);
+			}
+
 		}
+
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Use the specified program ID
@@ -273,32 +351,20 @@ int main(int argc, char *argv[])
 		//Render();
 		*/
 
+
+
 		//Pass the matrices to our program
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
-		const Uint8 *keys = SDL_GetKeyboardState(NULL);
-
-		//Player 1 moves the left paddle
-		if (keys[SDL_SCANCODE_RIGHT]) {
-			playerModelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
-		}
-		if (keys[SDL_SCANCODE_LEFT]) {
-			playerModelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
-		}
-
+		ProcessInput(playerModelMatrix, elapsed);
 		program.SetModelMatrix(playerModelMatrix);
-
 		player.Draw(&program);
 
-		program.SetModelMatrix(modelMatrix); 
-
-		enemy1.Draw(&program);
-		enemy2.Draw(&program);
-		enemy3.Draw(&program);
-		enemy4.Draw(&program);
-
+		enemyModelMatrix.Translate(0.001, 0, 0);
+		program.SetModelMatrix(enemyModelMatrix);
+		enemy.Draw(&program);
 
 		SDL_GL_SwapWindow(displayWindow);
 	}
