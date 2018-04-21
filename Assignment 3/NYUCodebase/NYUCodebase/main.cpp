@@ -253,6 +253,9 @@ int main(int argc, char *argv[])
 
 	//Setting up the Sprite sheet
 	GLuint spriteSheetTexture = LoadTexture("sheet.png");
+
+	//Setting up the text sheet
+	GLuint textTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
 	//playerShip2_red.png (line 224)
 	Entity player; 
 	player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
@@ -307,7 +310,7 @@ int main(int argc, char *argv[])
 	playerModelMatrix.Translate(0, -2.25, 0);
 	program.SetModelMatrix(playerModelMatrix);
 
-	mode = STATE_GAME_LEVEL;
+	mode = STATE_MAIN_MENU;
 
 	SDL_Event event;
 	bool done = false;
@@ -358,6 +361,9 @@ int main(int argc, char *argv[])
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
+		
+		DrawText(&program, textTexture, "Space Invaders", 0.35, 0.05);
+
 		ProcessInput(playerModelMatrix, elapsed);
 		program.SetModelMatrix(playerModelMatrix);
 		player.Draw(&program);
@@ -365,6 +371,7 @@ int main(int argc, char *argv[])
 		enemyModelMatrix.Translate(0.001, 0, 0);
 		program.SetModelMatrix(enemyModelMatrix);
 		enemy.Draw(&program);
+
 
 		SDL_GL_SwapWindow(displayWindow);
 	}
