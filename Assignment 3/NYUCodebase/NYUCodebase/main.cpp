@@ -10,10 +10,15 @@
 #include "stb_image.h"
 #include <vector>
 #include <windows.h>
+#include <iostream>
+#include <string>
 
 //60 FPS (1 / 60) (update sixty times a second)
 #define FIXED_TIMESTEP 0.01666666
 #define MAX_TIMESTEPS 6
+
+//Object Pool for bullets
+#define MAX_BULLETS 30
 
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
@@ -91,16 +96,6 @@ void SheetSprite::Draw(ShaderProgram *program) {
 	glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
-//Simple vector class
-class Vector3 {
-public:
-	Vector3() {};
-	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
-
-	float x;
-	float y;
-	float z;
-};
 
 void DrawText(ShaderProgram *program, int fontTexture, std::string text, float size, float spacing) {
 	float texture_size = 1.0 / 16.0f;
@@ -144,6 +139,17 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
 
 }
 
+//Simple vector class
+class Vector3 {
+public:
+	Vector3() {};
+	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
+
+	float x;
+	float y;
+	float z;
+};
+
 class Entity {
 public:
 	Entity() {};
@@ -152,8 +158,11 @@ public:
 	}
 
 	void Update(float elapsed) {
-
+		position.x += elapsed * velocity.x;
+		position.y += elapsed * velocity.y;
+		position.z += elapsed * velocity.z;
 	}
+
 	Vector3 position;
 	Vector3 velocity;
 	Vector3 size;
@@ -166,7 +175,11 @@ public:
 class GameState {
 public:
 	Entity player;
-	Entity enemies[12];
+	Entity enemy1[9];
+	Entity enemy2[9];
+	Entity enemy3[9];
+	Entity enemy4[9];
+
 	Entity bullets[10];
 	int score;
 };
@@ -176,13 +189,13 @@ enum GameMode { STATE_MAIN_MENU, STATE_GAME_LEVEL, STATE_GAME_OVER };
 GameMode mode;
 GameState state;
 
-
 //Player Globals
 Matrix projectionMatrix;
 Matrix modelMatrix;
 Matrix viewMatrix;
 Matrix playerModelMatrix;
 Matrix enemyModelMatrix;
+Matrix bulletModelMatrix;
 
 Matrix titleModelMatrix;
 Matrix commandModelMatrix;
@@ -190,8 +203,18 @@ Matrix commandModelMatrix;
 GLuint textTexture;
 GLuint spriteSheetTexture;
 
-Entity player;
-Entity enemy;
+
+void ShootBullet() {
+	state.bullets[0].velocity.y = 0.3;
+}
+
+/*
+void RenderBullet(ShaderProgram *program) {
+	bulletModelMatrix.SetPosition(state.player.position.x, -2.25, 0.0);
+	program->SetModelMatrix(bulletModelMatrix);
+	state.bullets[0].Draw(program);
+}
+*/
 
 //----------PROCESS INPUT FUNCTIONS------------
 
@@ -200,9 +223,12 @@ void ProcessGameInput(float elapsed) {
 	const Uint8 *keys = SDL_GetKeyboardState(NULL);
 
 	if (keys[SDL_SCANCODE_RIGHT]) {
+		state.player.position.x += elapsed * 2.5;
 		playerModelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
+		//OutputDebugString(std::to_string(3.14));
 	}
 	if (keys[SDL_SCANCODE_LEFT]) {
+		state.player.position.x -= elapsed * 2.5;
 		playerModelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
 	}
 
@@ -221,7 +247,7 @@ void ProcessMenuPollingInput(SDL_Event& event) {
 void ProcessGamePollingInput(SDL_Event& event, bool& prevPressed) {
 	if (event.type == SDL_KEYDOWN && prevPressed == false) {
 		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-			playerModelMatrix.Translate(0.25, 0, 0);
+			ShootBullet();
 			prevPressed = true;
 		}
 	}
@@ -257,13 +283,35 @@ void Render(ShaderProgram *program) {
 		break;
 	case STATE_GAME_LEVEL:
 		program->SetModelMatrix(playerModelMatrix);
-		player.Draw(program);
-		program->SetModelMatrix(enemyModelMatrix);
-		enemy.Draw(program);
+		state.player.Draw(program);
+
+		for (float i = -4.0; i < 5; i++) {
+			enemyModelMatrix.SetPosition(i, 2.5, 0.0);
+			program->SetModelMatrix(enemyModelMatrix);
+			state.enemy1[0].Draw(program);
+		}
+
+		for (float i = -4.0; i < 5; i++) {
+			enemyModelMatrix.SetPosition(i, 2.0, 0.0);
+			program->SetModelMatrix(enemyModelMatrix);
+			state.enemy2[0].Draw(program);
+		}
+
+		for (float i = -4.0; i < 5; i++) {
+			enemyModelMatrix.SetPosition(i, 1.5, 0.0);
+			program->SetModelMatrix(enemyModelMatrix);
+			state.enemy3[0].Draw(program);
+		}
+
+		for (float i = -4.0; i < 5; i++) {
+			enemyModelMatrix.SetPosition(i, 1.0, 0.0);
+			program->SetModelMatrix(enemyModelMatrix);
+			state.enemy4[0].Draw(program);
+		}
+
 		break;
 	}
 }
-
 
 
 
@@ -289,32 +337,40 @@ int main(int argc, char *argv[])
 
 	//Setting up the Sprite sheet
 	spriteSheetTexture = LoadTexture("sheet.png");
-
 	//Setting up the text sheet
 	textTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+	
 	//playerShip2_red.png (line 224) 
-	player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
-	/*
-	player.position.x = 0;
-	player.position.y = 0;
-	player.position.z = 0;
-	player.size.x = 112.0 / 1024.0;
-	player.size.y = 75.0 / 1024.0;
-	player.size.z = 0;
-	*/
+	state.player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
+	state.player.position.x = 0;
+	state.player.position.y = 0;
+	state.player.position.z = 0;
+	state.player.size.x = 112.0 / 1024.0;
+	state.player.size.z = 0;
 
 	//enemyBlack3.png (line 55)
-
-	enemy.sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	for (int i = 0; i < 9; i++) {
+		state.enemy1[i].sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	}
 
 	//enemyBlue4.png (line 4)
-	SheetSprite enemy2 = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	for (int i = 0; i < 9; i++) {
+		state.enemy2[i].sprite = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	}
 
 	//enemyGreen5.png (line 70)
-	SheetSprite enemy3 = SheetSprite(spriteSheetTexture, 408.0/ 1024.0, 907.0 / 1024.0, 97.0/ 1024.0, 84.0/ 1024.0, 0.3);
+	for (int i = 0; i < 9; i++) {
+		state.enemy3[i].sprite = SheetSprite(spriteSheetTexture, 408.0 / 1024.0, 907.0 / 1024.0, 97.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	}
 
 	//enemyRed1.png (line 74)
-	SheetSprite enemy4 = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0/ 1024.0, 84.0 / 1024.0, 0.3);
+	for (int i = 0; i < 9; i++) {
+		state.enemy4[i].sprite = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	}
+
+	for (int i = 0; i < 10; i++) {
+		state.bullets[i].sprite = SheetSprite(spriteSheetTexture, 843.0 / 1024.0, 426.0 / 1024.0, 13.0 / 1024.0, 54.0 / 1024.0, 0.3);
+	}
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-5.33f, 5.33f, -3.0f, 3.0f, -1.0f, 1.0f);
@@ -337,6 +393,12 @@ int main(int argc, char *argv[])
 	//Setup initial player position
 	playerModelMatrix.Translate(0, -2.25, 0);
 	program.SetModelMatrix(playerModelMatrix);
+
+	//Setup intial bullets position
+	state.bullets[0].position.x = 0.0;
+	state.bullets[0].position.y = -2.25;
+	state.bullets[0].position.z = 0;
+	bulletModelMatrix.Translate(0, -2.25, 0);
 
 	//Setup intial Menu text positions
 	titleModelMatrix.Translate(-2.25, 0.25, 0.0);
@@ -396,7 +458,11 @@ int main(int argc, char *argv[])
 
 		ProcessInput(elapsed);
 		Render(&program);
-
+		//RenderBullet(&program);
+		state.bullets[0].Update(elapsed);
+		bulletModelMatrix.SetPosition(state.bullets[0].position.x, state.bullets[0].position.x, 0.0);
+		program.SetModelMatrix(bulletModelMatrix);
+		state.bullets[0].Draw(&program);
 
 
 		SDL_GL_SwapWindow(displayWindow);
