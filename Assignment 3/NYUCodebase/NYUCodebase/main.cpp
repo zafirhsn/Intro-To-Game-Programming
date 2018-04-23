@@ -163,11 +163,6 @@ public:
 	SheetSprite sprite;
 };
 
-void Render(ShaderProgram *program) {
-
-
-}
-
 class GameState {
 public:
 	Entity player;
@@ -182,17 +177,33 @@ GameMode mode;
 GameState state;
 
 
+//Player Globals
+Matrix projectionMatrix;
+Matrix modelMatrix;
+Matrix viewMatrix;
+Matrix playerModelMatrix;
+Matrix enemyModelMatrix;
+
+Matrix titleModelMatrix;
+Matrix commandModelMatrix;
+
+GLuint textTexture;
+GLuint spriteSheetTexture;
+
+Entity player;
+Entity enemy;
+
 //----------PROCESS INPUT FUNCTIONS------------
 
 //Process regular player movement in game
-void ProcessGameInput(Matrix& modelMatrix, float elapsed) {
+void ProcessGameInput(float elapsed) {
 	const Uint8 *keys = SDL_GetKeyboardState(NULL);
 
 	if (keys[SDL_SCANCODE_RIGHT]) {
-		modelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
+		playerModelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
 	}
 	if (keys[SDL_SCANCODE_LEFT]) {
-		modelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
+		playerModelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
 	}
 
 }
@@ -207,10 +218,10 @@ void ProcessMenuPollingInput(SDL_Event& event) {
 }
 
 //Process polling events for game (shooting)
-void ProcessGamePollingInput(SDL_Event& event, Matrix& modelMatrix, bool& prevPressed) {
+void ProcessGamePollingInput(SDL_Event& event, bool& prevPressed) {
 	if (event.type == SDL_KEYDOWN && prevPressed == false) {
 		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-			modelMatrix.Translate(0.25, 0, 0);
+			playerModelMatrix.Translate(0.25, 0, 0);
 			prevPressed = true;
 		}
 	}
@@ -222,14 +233,39 @@ void ProcessGamePollingInput(SDL_Event& event, Matrix& modelMatrix, bool& prevPr
 }
 
 //-----PROCESS INPUT FOR ENTIRE GAME------
-void ProcessInput(Matrix& modelMatrix, float elapsed) {
+void ProcessInput(float elapsed) {
 	switch (mode) {
 	case STATE_MAIN_MENU:
 		break;
 	case STATE_GAME_LEVEL:
-		ProcessGameInput(modelMatrix, elapsed);
+		ProcessGameInput(elapsed);
+		break;
 	}
 }
+
+void RenderMenu(ShaderProgram *program) {
+	program->SetModelMatrix(titleModelMatrix);
+	DrawText(program, textTexture, "Space Invaders", 0.30, 0.05);
+	program->SetModelMatrix(commandModelMatrix);
+	DrawText(program, textTexture, "Press SPACE to Start", 0.20, -0.05);
+}
+
+void Render(ShaderProgram *program) {
+	switch (mode) {
+	case STATE_MAIN_MENU:
+		RenderMenu(program);
+		break;
+	case STATE_GAME_LEVEL:
+		program->SetModelMatrix(playerModelMatrix);
+		player.Draw(program);
+		program->SetModelMatrix(enemyModelMatrix);
+		enemy.Draw(program);
+		break;
+	}
+}
+
+
+
 
 int main(int argc, char *argv[])
 {
@@ -252,12 +288,11 @@ int main(int argc, char *argv[])
 	program.Load(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 
 	//Setting up the Sprite sheet
-	GLuint spriteSheetTexture = LoadTexture("sheet.png");
+	spriteSheetTexture = LoadTexture("sheet.png");
 
 	//Setting up the text sheet
-	GLuint textTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
-	//playerShip2_red.png (line 224)
-	Entity player; 
+	textTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
+	//playerShip2_red.png (line 224) 
 	player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
 	/*
 	player.position.x = 0;
@@ -269,7 +304,7 @@ int main(int argc, char *argv[])
 	*/
 
 	//enemyBlack3.png (line 55)
-	Entity enemy;
+
 	enemy.sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
 
 	//enemyBlue4.png (line 4)
@@ -280,13 +315,6 @@ int main(int argc, char *argv[])
 
 	//enemyRed1.png (line 74)
 	SheetSprite enemy4 = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0/ 1024.0, 84.0 / 1024.0, 0.3);
-
-	//Load the matrices
-	Matrix projectionMatrix;
-	Matrix modelMatrix;
-	Matrix viewMatrix;
-	Matrix playerModelMatrix;
-	Matrix enemyModelMatrix;
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-5.33f, 5.33f, -3.0f, 3.0f, -1.0f, 1.0f);
@@ -310,6 +338,10 @@ int main(int argc, char *argv[])
 	playerModelMatrix.Translate(0, -2.25, 0);
 	program.SetModelMatrix(playerModelMatrix);
 
+	//Setup intial Menu text positions
+	titleModelMatrix.Translate(-2.25, 0.25, 0.0);
+	commandModelMatrix.Translate(-1.30, -0.75, 0.0);
+
 	mode = STATE_MAIN_MENU;
 
 	SDL_Event event;
@@ -325,8 +357,10 @@ int main(int argc, char *argv[])
 			case STATE_MAIN_MENU:
 				ProcessMenuPollingInput(event);
 				spaceDown = true;
+				break;
 			case STATE_GAME_LEVEL: 
-				ProcessGamePollingInput(event, playerModelMatrix, spaceDown);
+				ProcessGamePollingInput(event, spaceDown);
+				break;
 			}
 
 		}
@@ -351,7 +385,6 @@ int main(int argc, char *argv[])
 			elapsed -= FIXED_TIMESTEP;
 		}
 		accumulator = elapsed;
-		//Render();
 		*/
 
 
@@ -361,16 +394,9 @@ int main(int argc, char *argv[])
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
-		
-		DrawText(&program, textTexture, "Space Invaders", 0.35, 0.05);
+		ProcessInput(elapsed);
+		Render(&program);
 
-		ProcessInput(playerModelMatrix, elapsed);
-		program.SetModelMatrix(playerModelMatrix);
-		player.Draw(&program);
-
-		enemyModelMatrix.Translate(0.001, 0, 0);
-		program.SetModelMatrix(enemyModelMatrix);
-		enemy.Draw(&program);
 
 
 		SDL_GL_SwapWindow(displayWindow);
