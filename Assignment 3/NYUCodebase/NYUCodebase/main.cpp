@@ -12,13 +12,14 @@
 #include <windows.h>
 #include <iostream>
 #include <string>
+#include <cmath>
 
 //60 FPS (1 / 60) (update sixty times a second)
 #define FIXED_TIMESTEP 0.01666666
 #define MAX_TIMESTEPS 6
 
 //Object Pool for bullets
-#define MAX_BULLETS 30
+#define MAX_BULLETS 10
 
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
@@ -175,11 +176,7 @@ public:
 class GameState {
 public:
 	Entity player;
-	Entity enemy1[9];
-	Entity enemy2[9];
-	Entity enemy3[9];
-	Entity enemy4[9];
-
+	Entity enemy[32];
 	Entity bullets[10];
 	int score;
 };
@@ -205,7 +202,9 @@ GLuint spriteSheetTexture;
 
 
 void ShootBullet() {
-	state.bullets[0].velocity.y = 0.3;
+	state.bullets[0].velocity.y = 6.0;
+	state.bullets[0].velocity.x = 0.0;
+	state.bullets[0].velocity.z = 0.0;
 }
 
 /*
@@ -285,29 +284,20 @@ void Render(ShaderProgram *program) {
 		program->SetModelMatrix(playerModelMatrix);
 		state.player.Draw(program);
 
-		for (float i = -4.0; i < 5; i++) {
-			enemyModelMatrix.SetPosition(i, 2.5, 0.0);
-			program->SetModelMatrix(enemyModelMatrix);
-			state.enemy1[0].Draw(program);
-		}
 
-		for (float i = -4.0; i < 5; i++) {
-			enemyModelMatrix.SetPosition(i, 2.0, 0.0);
-			program->SetModelMatrix(enemyModelMatrix);
-			state.enemy2[0].Draw(program);
-		}
-
-		for (float i = -4.0; i < 5; i++) {
+		/*
+		for (float i = -3.5; i < 4; i++) {
 			enemyModelMatrix.SetPosition(i, 1.5, 0.0);
 			program->SetModelMatrix(enemyModelMatrix);
 			state.enemy3[0].Draw(program);
 		}
 
-		for (float i = -4.0; i < 5; i++) {
+		for (float i = -3.5; i < 4; i++) {
 			enemyModelMatrix.SetPosition(i, 1.0, 0.0);
 			program->SetModelMatrix(enemyModelMatrix);
 			state.enemy4[0].Draw(program);
 		}
+		*/
 
 		break;
 	}
@@ -348,26 +338,28 @@ int main(int argc, char *argv[])
 	state.player.size.x = 112.0 / 1024.0;
 	state.player.size.z = 0;
 
-	//enemyBlack3.png (line 55)
-	for (int i = 0; i < 9; i++) {
-		state.enemy1[i].sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	
+	for (int i = 0; i < 32; i++) {
+		if (i < 8) {
+			//enemyBlack3.png (line 55)
+			state.enemy[i].sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+		}
+		else if (i < 16) {
+			//enemyBlue4.png (line 4)
+			state.enemy[i].sprite = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
+		}
+		else if (i < 24) {
+			//enemyGreen5.png (line 70)
+			state.enemy[i].sprite = SheetSprite(spriteSheetTexture, 408.0 / 1024.0, 907.0 / 1024.0, 97.0 / 1024.0, 84.0 / 1024.0, 0.3);
+		}
+		
+		else if (i < 32) {
+			//enemyRed1.png (line 74)
+			state.enemy[i].sprite = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0 / 1024.0, 84.0 / 1024.0, 0.3);
+		}
 	}
 
-	//enemyBlue4.png (line 4)
-	for (int i = 0; i < 9; i++) {
-		state.enemy2[i].sprite = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
-	}
-
-	//enemyGreen5.png (line 70)
-	for (int i = 0; i < 9; i++) {
-		state.enemy3[i].sprite = SheetSprite(spriteSheetTexture, 408.0 / 1024.0, 907.0 / 1024.0, 97.0 / 1024.0, 84.0 / 1024.0, 0.3);
-	}
-
-	//enemyRed1.png (line 74)
-	for (int i = 0; i < 9; i++) {
-		state.enemy4[i].sprite = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0 / 1024.0, 84.0 / 1024.0, 0.3);
-	}
-
+	//Bullet sprite
 	for (int i = 0; i < 10; i++) {
 		state.bullets[i].sprite = SheetSprite(spriteSheetTexture, 843.0 / 1024.0, 426.0 / 1024.0, 13.0 / 1024.0, 54.0 / 1024.0, 0.3);
 	}
@@ -397,12 +389,33 @@ int main(int argc, char *argv[])
 	//Setup intial bullets position
 	state.bullets[0].position.x = 0.0;
 	state.bullets[0].position.y = -2.25;
-	state.bullets[0].position.z = 0;
+	state.bullets[0].position.z = 0.0;
 	bulletModelMatrix.Translate(0, -2.25, 0);
 
+	//Setup initial enemy velocities
+	for (int i = 0; i < 32; i++) {
+		state.enemy[i].velocity.x = 0.35;
+		state.enemy[i].velocity.y = 0.0;
+		state.enemy[i].velocity.z = 0.0;
+
+	}
+
+	float j = -3.5;
+	float k = 2.5;
+	for (int i = 0; i < 32; i++) {
+		state.enemy[i].position.x = j;
+		state.enemy[i].position.y = k;
+		state.enemy[i].position.z = 0.0;
+		if (j < 3) { j++; }
+		else { 
+			j = -3.5;
+			k -= 0.5;
+		}
+	}
+
 	//Setup intial Menu text positions
-	titleModelMatrix.Translate(-2.25, 0.25, 0.0);
-	commandModelMatrix.Translate(-1.30, -0.75, 0.0);
+	titleModelMatrix.Translate(-2.25, 0.75, 0.0);
+	commandModelMatrix.Translate(-1.30, -0.25, 0.0);
 
 	mode = STATE_MAIN_MENU;
 
@@ -449,8 +462,6 @@ int main(int argc, char *argv[])
 		accumulator = elapsed;
 		*/
 
-
-
 		//Pass the matrices to our program
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
@@ -459,10 +470,24 @@ int main(int argc, char *argv[])
 		ProcessInput(elapsed);
 		Render(&program);
 		//RenderBullet(&program);
+		for (int i = 0; i < 32; i++) {
+			state.enemy[i].Update(elapsed);
+			enemyModelMatrix.SetPosition(state.enemy[i].position.x, state.enemy[i].position.y, 0.0);
+			program.SetModelMatrix(enemyModelMatrix);
+			state.enemy[i].Draw(&program);
+		}
+		for (int i = 0; i < 32; i++) {
+			if (state.enemy[i].position.x > 5.0) {
+				for (int j = 0; j < 32; j++) {
+					state.enemy[j].velocity.x *= -1.0;
+				}
+			}
+		}
+
 		state.bullets[0].Update(elapsed);
-		bulletModelMatrix.SetPosition(state.bullets[0].position.x, state.bullets[0].position.x, 0.0);
+		bulletModelMatrix.SetPosition(state.bullets[0].position.x, state.bullets[0].position.y, 0.0);
 		program.SetModelMatrix(bulletModelMatrix);
-		state.bullets[0].Draw(&program);
+		state.bullets[0].Draw(&program); 
 
 
 		SDL_GL_SwapWindow(displayWindow);
