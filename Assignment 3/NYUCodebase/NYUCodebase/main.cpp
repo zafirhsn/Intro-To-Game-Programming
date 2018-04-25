@@ -2,6 +2,7 @@
 #ifdef _WINDOWS
 #include <GL/glew.h>
 #endif
+#include <SDL_mixer.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_image.h>
@@ -200,20 +201,22 @@ Matrix commandModelMatrix;
 GLuint textTexture;
 GLuint spriteSheetTexture;
 
+//Audio
 
+
+int bulletIndex = 0;
 void ShootBullet() {
-	state.bullets[0].velocity.y = 6.0;
-	state.bullets[0].velocity.x = 0.0;
-	state.bullets[0].velocity.z = 0.0;
+	state.bullets[bulletIndex].position.x = state.player.position.x;
+	state.bullets[bulletIndex].position.y = -2.25;
+	state.bullets[bulletIndex].position.z = 0.0;
+	state.bullets[bulletIndex].velocity.y = 6.0;
+	state.bullets[bulletIndex].velocity.x = 0.0;
+	state.bullets[bulletIndex].velocity.z = 0.0;
+	bulletIndex++;
+	if (bulletIndex > MAX_BULLETS - 1) {
+		bulletIndex = 0;
+	}
 }
-
-/*
-void RenderBullet(ShaderProgram *program) {
-	bulletModelMatrix.SetPosition(state.player.position.x, -2.25, 0.0);
-	program->SetModelMatrix(bulletModelMatrix);
-	state.bullets[0].Draw(program);
-}
-*/
 
 //----------PROCESS INPUT FUNCTIONS------------
 
@@ -268,6 +271,20 @@ void ProcessInput(float elapsed) {
 	}
 }
 
+void Update(float elapsed) {
+	for (int i = 0; i < 32; i++) {
+		state.enemy[i].Update(elapsed);
+		if (std::abs(state.enemy[i].position.x) >= 4.5) {
+			state.enemy[i].velocity.x *= -1.1;
+			state.enemy[i].position.y -= 0.05;
+		}
+	}
+	for (int i = 0; i < MAX_BULLETS - 1; i++) {
+		state.bullets[i].Update(elapsed);
+	}
+
+}
+
 void RenderMenu(ShaderProgram *program) {
 	program->SetModelMatrix(titleModelMatrix);
 	DrawText(program, textTexture, "Space Invaders", 0.30, 0.05);
@@ -284,20 +301,17 @@ void Render(ShaderProgram *program) {
 		program->SetModelMatrix(playerModelMatrix);
 		state.player.Draw(program);
 
-
-		/*
-		for (float i = -3.5; i < 4; i++) {
-			enemyModelMatrix.SetPosition(i, 1.5, 0.0);
+		for (int i = 0; i < 32; i++) {
+			enemyModelMatrix.SetPosition(state.enemy[i].position.x, state.enemy[i].position.y, 0.0);
 			program->SetModelMatrix(enemyModelMatrix);
-			state.enemy3[0].Draw(program);
+			state.enemy[i].Draw(program);
 		}
 
-		for (float i = -3.5; i < 4; i++) {
-			enemyModelMatrix.SetPosition(i, 1.0, 0.0);
-			program->SetModelMatrix(enemyModelMatrix);
-			state.enemy4[0].Draw(program);
+		for (int i = 0; i < MAX_BULLETS - 1; i++) {
+			bulletModelMatrix.SetPosition(state.bullets[i].position.x, state.bullets[i].position.y, 0.0);
+			program->SetModelMatrix(bulletModelMatrix);
+			state.bullets[i].Draw(program);
 		}
-		*/
 
 		break;
 	}
@@ -387,14 +401,15 @@ int main(int argc, char *argv[])
 	program.SetModelMatrix(playerModelMatrix);
 
 	//Setup intial bullets position
-	state.bullets[0].position.x = 0.0;
-	state.bullets[0].position.y = -2.25;
-	state.bullets[0].position.z = 0.0;
-	bulletModelMatrix.Translate(0, -2.25, 0);
+	for (int i = 0; i < MAX_BULLETS - 1; i++) {
+		state.bullets[i].position.x = 200.0;
+		state.bullets[i].position.y = -2.25;
+		state.bullets[i].position.z = 0.0;
+	}
 
 	//Setup initial enemy velocities
 	for (int i = 0; i < 32; i++) {
-		state.enemy[i].velocity.x = 0.35;
+		state.enemy[i].velocity.x = 0.5;
 		state.enemy[i].velocity.y = 0.0;
 		state.enemy[i].velocity.z = 0.0;
 
@@ -418,6 +433,12 @@ int main(int argc, char *argv[])
 	commandModelMatrix.Translate(-1.30, -0.25, 0.0);
 
 	mode = STATE_MAIN_MENU;
+
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
+	Mix_Chunk *laserSound;
+	laserSound = Mix_LoadWAV(RESOURCE_FOLDER"laser_gun.wav");
+
+	Mix_PlayChannel(-1, laserSound, 0);
 
 	SDL_Event event;
 	bool done = false;
@@ -468,27 +489,8 @@ int main(int argc, char *argv[])
 		program.SetViewMatrix(viewMatrix);
 
 		ProcessInput(elapsed);
+		Update(elapsed);
 		Render(&program);
-		//RenderBullet(&program);
-		for (int i = 0; i < 32; i++) {
-			state.enemy[i].Update(elapsed);
-			enemyModelMatrix.SetPosition(state.enemy[i].position.x, state.enemy[i].position.y, 0.0);
-			program.SetModelMatrix(enemyModelMatrix);
-			state.enemy[i].Draw(&program);
-		}
-		for (int i = 0; i < 32; i++) {
-			if (state.enemy[i].position.x > 5.0) {
-				for (int j = 0; j < 32; j++) {
-					state.enemy[j].velocity.x *= -1.0;
-				}
-			}
-		}
-
-		state.bullets[0].Update(elapsed);
-		bulletModelMatrix.SetPosition(state.bullets[0].position.x, state.bullets[0].position.y, 0.0);
-		program.SetModelMatrix(bulletModelMatrix);
-		state.bullets[0].Draw(&program); 
-
 
 		SDL_GL_SwapWindow(displayWindow);
 	}
