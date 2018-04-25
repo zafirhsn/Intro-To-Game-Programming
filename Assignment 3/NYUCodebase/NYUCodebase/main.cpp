@@ -168,6 +168,7 @@ public:
 	Vector3 position;
 	Vector3 velocity;
 	Vector3 size;
+	bool dead; 
 
 	float rotation;
 
@@ -215,6 +216,10 @@ void ShootBullet() {
 	bulletIndex++;
 	if (bulletIndex > MAX_BULLETS - 1) {
 		bulletIndex = 0;
+		for (int i = 0; i < MAX_BULLETS - 1; i++) {
+			state.bullets[i].dead = false;
+		}
+
 	}
 }
 
@@ -272,15 +277,57 @@ void ProcessInput(float elapsed) {
 }
 
 void Update(float elapsed) {
+	int leftIndex = 0;
+	float leftMostPos = 0;
+	int rightIndex = 0;
+	float rightMostPos = 0;
 	for (int i = 0; i < 32; i++) {
-		state.enemy[i].Update(elapsed);
-		if (std::abs(state.enemy[i].position.x) >= 4.5) {
-			state.enemy[i].velocity.x *= -1.1;
-			state.enemy[i].position.y -= 0.05;
+		if (state.enemy[i].dead != true) {
+			state.enemy[i].Update(elapsed);
+		}
+
+		if (state.enemy[i].position.x > rightMostPos) {
+			rightIndex = i;
+			rightMostPos = state.enemy[i].position.x;
+		}
+		if (state.enemy[i].position.x < leftMostPos) {
+			leftIndex = i;
+			leftMostPos = state.enemy[i].position.x;
 		}
 	}
+	if (state.enemy[leftIndex].position.x < -4.5 || state.enemy[rightIndex].position.x > 4.5) {
+		for (int i = 0; i < 32; i++) {
+			state.enemy[i].velocity.x *= -1.05;
+			state.enemy[i].position.y -= 0.10;
+		}
+
+	}
+
+
 	for (int i = 0; i < MAX_BULLETS - 1; i++) {
-		state.bullets[i].Update(elapsed);
+		if (state.bullets[i].dead != true) {
+			state.bullets[i].Update(elapsed);
+		}
+
+		for (int j = 0; j < 32; j++) {
+			if (state.enemy[j].dead != true) {
+				if (state.bullets[i].position.x < (state.enemy[j].position.x + state.enemy[j].size.x / 2) &&
+					state.bullets[i].position.x >(state.enemy[j].position.x - state.enemy[j].size.x / 2)) {
+					if (state.bullets[i].position.y < (state.enemy[j].position.y + state.enemy[j].size.y / 2) &&
+						state.bullets[i].position.y >(state.enemy[j].position.y - state.enemy[j].size.y / 2)) {
+						state.enemy[j].dead = true;
+						state.enemy[j].position.x = 0;
+						state.enemy[j].position.y = -200;
+						state.enemy[j].position.z = 0.0;
+
+						state.bullets[i].dead = true;
+						state.bullets[i].position.x = 200.0;
+						state.bullets[i].position.y = -2.25;
+						state.bullets[i].position.z = 0.0;
+					}
+				}
+			}
+		}
 	}
 
 }
@@ -302,15 +349,19 @@ void Render(ShaderProgram *program) {
 		state.player.Draw(program);
 
 		for (int i = 0; i < 32; i++) {
-			enemyModelMatrix.SetPosition(state.enemy[i].position.x, state.enemy[i].position.y, 0.0);
-			program->SetModelMatrix(enemyModelMatrix);
-			state.enemy[i].Draw(program);
+			if (state.enemy[i].dead == false) {
+				enemyModelMatrix.SetPosition(state.enemy[i].position.x, state.enemy[i].position.y, 0.0);
+				program->SetModelMatrix(enemyModelMatrix);
+				state.enemy[i].Draw(program);
+			}
 		}
 
 		for (int i = 0; i < MAX_BULLETS - 1; i++) {
-			bulletModelMatrix.SetPosition(state.bullets[i].position.x, state.bullets[i].position.y, 0.0);
-			program->SetModelMatrix(bulletModelMatrix);
-			state.bullets[i].Draw(program);
+			if (state.bullets[i].dead == false) {
+				bulletModelMatrix.SetPosition(state.bullets[i].position.x, state.bullets[i].position.y, 0.0);
+				program->SetModelMatrix(bulletModelMatrix);
+				state.bullets[i].Draw(program);
+			}
 		}
 
 		break;
@@ -371,11 +422,19 @@ int main(int argc, char *argv[])
 			//enemyRed1.png (line 74)
 			state.enemy[i].sprite = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0 / 1024.0, 84.0 / 1024.0, 0.3);
 		}
+		state.enemy[i].size.x = 0.3;
+		state.enemy[i].size.y = 0.3;
+		state.enemy[i].size.z = 0.0;
+		state.enemy[i].dead = false;
 	}
 
 	//Bullet sprite
 	for (int i = 0; i < 10; i++) {
 		state.bullets[i].sprite = SheetSprite(spriteSheetTexture, 843.0 / 1024.0, 426.0 / 1024.0, 13.0 / 1024.0, 54.0 / 1024.0, 0.3);
+		state.bullets[i].size.x = 0.3;
+		state.bullets[i].size.y = 0.3;
+		state.bullets[i].size.z = 0.0;
+		state.bullets[i].dead = false;
 	}
 
 	//Sets an orthographic projection in a matrix
@@ -466,30 +525,29 @@ int main(int argc, char *argv[])
 		//Use the specified program ID
 		glUseProgram(program.programID);
 
-		float ticks = (float)SDL_GetTicks() / 1000.0;
-		float elapsed = ticks - lastFrameTicks;
-		lastFrameTicks = ticks;
-
-		//Keeping time with a fixed timestep
-		/*elapsed += accumulator;
-		if (elapsed < FIXED_TIMESTEP) {
-			accumulator = elapsed;
-			continue;
-		}
-		while (elapsed >= FIXED_TIMESTEP) {
-			//Update(FIXED_TIMESTEP);
-			elapsed -= FIXED_TIMESTEP;
-		}
-		accumulator = elapsed;
-		*/
-
 		//Pass the matrices to our program
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
-		ProcessInput(elapsed);
-		Update(elapsed);
+		float ticks = (float)SDL_GetTicks() / 1000.0;
+		float elapsed = ticks - lastFrameTicks;
+		lastFrameTicks = ticks;
+
+
+		//Keeping time with a fixed timestep
+		elapsed += accumulator;
+		if (elapsed < FIXED_TIMESTEP) {
+			accumulator = elapsed;
+			continue;
+		}
+		while (elapsed >= FIXED_TIMESTEP) {
+			ProcessInput(FIXED_TIMESTEP);
+			Update(FIXED_TIMESTEP);
+			elapsed -= FIXED_TIMESTEP;
+		}
+		accumulator = elapsed;
+
 		Render(&program);
 
 		SDL_GL_SwapWindow(displayWindow);
