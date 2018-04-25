@@ -314,7 +314,7 @@ void Update(float elapsed) {
 				if (state.bullets[i].position.x < (state.enemy[j].position.x + state.enemy[j].size.x / 2) &&
 					state.bullets[i].position.x >(state.enemy[j].position.x - state.enemy[j].size.x / 2)) {
 					if (state.bullets[i].position.y < (state.enemy[j].position.y + state.enemy[j].size.y / 2) &&
-						state.bullets[i].position.y >(state.enemy[j].position.y - state.enemy[j].size.y / 2)) {
+						state.bullets[i].position.y > (state.enemy[j].position.y - state.enemy[j].size.y / 2)) {
 						state.enemy[j].dead = true;
 						state.enemy[j].position.x = 0;
 						state.enemy[j].position.y = -200;

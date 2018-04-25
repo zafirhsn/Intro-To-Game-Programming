@@ -2,6 +2,7 @@
 #ifdef _WINDOWS
 #include <GL/glew.h>
 #endif
+#include <SDL_mixer.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_image.h>
@@ -10,6 +11,9 @@
 #include "stb_image.h"
 #include <vector>
 #include <windows.h>
+#include <iostream>
+#include <string>
+#include <cmath>
 
 //60 FPS (1 / 60) (update sixty times a second)
 #define FIXED_TIMESTEP 0.01666666
@@ -144,6 +148,14 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
 
 }
 
+
+
+float lerp(float v0, float v1, float t) {
+	return (1.0 - t)*v0 + t * v1;
+}
+
+enum EntityType { ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_COIN };
+
 class Entity {
 public:
 	Entity() {};
@@ -152,21 +164,57 @@ public:
 	}
 
 	void Update(float elapsed) {
+		velocity.x = lerp(velocity.x, 0.0, elapsed * 0.1);
+		velocity.y = lerp(velocity.y, 0.0, elapsed * 0.1);
+		velocity.z = 0.0;
+
+		velocity.y += acceleration.y * elapsed;
+
+		velocity.x += acceleration.x * elapsed; 
+
+
+		velocity.z = 0.0;
+
+		position.x += velocity.x * elapsed;
+		position.y += velocity.y * elapsed; 
+		position.z += velocity.z * elapsed;
+	}
+
+	bool CollidesWith(Entity *entity) {
+		//R1 bottom > R2 top
+		if ((position.y - (size.y / 2)) > (entity->position.y + (entity->size.y / 2)) ||
+			//R1 top < R2 bottom
+			(position.y + (size.y / 2)) < (entity->position.y - (entity->size.y / 2)) ||
+			//R1 left > R2 right
+			(position.x - (size.x / 2)) > (entity->position.x + (entity->size.x / 2)) ||
+			//R1 right < R2 left
+			(position.x + (size.x / 2)) < (entity->position.x - (entity->size.x / 2))) {
+			
+			return false;
+		}
+		else {
+			return true;
+		}
 
 	}
+
 	Vector3 position;
 	Vector3 velocity;
+	Vector3 acceleration;
 	Vector3 size;
 
 	float rotation;
 
 	SheetSprite sprite;
+
+	bool isStatic;
+	EntityType enityType;
+
+	bool collidedTop;
+	bool collidedBottom;
+	bool collidedLeft;
+	bool collidedRight;
 };
-
-void Render(ShaderProgram *program) {
-
-
-}
 
 class GameState {
 public:
@@ -181,36 +229,22 @@ enum GameMode { STATE_MAIN_MENU, STATE_GAME_LEVEL, STATE_GAME_OVER };
 GameMode mode;
 GameState state;
 
+GLuint spriteSheetTexture;
+GLuint textTex;
 
-//----------PROCESS INPUT FUNCTIONS------------
-
-//Process regular player movement in game
-void ProcessGameInput(Matrix& modelMatrix, float elapsed) {
-	const Uint8 *keys = SDL_GetKeyboardState(NULL);
-
-	if (keys[SDL_SCANCODE_RIGHT]) {
-		modelMatrix.Translate(elapsed * 2.5, 0.0, 0.0);
-	}
-	if (keys[SDL_SCANCODE_LEFT]) {
-		modelMatrix.Translate(elapsed * -2.5, 0.0, 0.0);
-	}
-
-}
-
-//Process events for menu, only polling events
-void ProcessMenuPollingInput(SDL_Event& event) {
-	if (event.type == SDL_KEYDOWN) {
-		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-			mode = STATE_GAME_LEVEL;
-		}
-	}
-}
+//Load the matrices
+Matrix projectionMatrix;
+Matrix modelMatrix;
+Matrix viewMatrix;
+Matrix playerModelMatrix;
+Matrix enemyModelMatrix;
+Matrix titleModelMatrix;
 
 //Process polling events for game (shooting)
-void ProcessGamePollingInput(SDL_Event& event, Matrix& modelMatrix, bool& prevPressed) {
+void ProcessGamePollingInput(SDL_Event& event, bool& prevPressed) {
 	if (event.type == SDL_KEYDOWN && prevPressed == false) {
 		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-			modelMatrix.Translate(0.25, 0, 0);
+			state.player.velocity.y = 1.5;
 			prevPressed = true;
 		}
 	}
@@ -221,21 +255,49 @@ void ProcessGamePollingInput(SDL_Event& event, Matrix& modelMatrix, bool& prevPr
 	}
 }
 
-//-----PROCESS INPUT FOR ENTIRE GAME------
-void ProcessInput(Matrix& modelMatrix, float elapsed) {
-	switch (mode) {
-	case STATE_MAIN_MENU:
-		break;
-	case STATE_GAME_LEVEL:
-		ProcessGameInput(modelMatrix, elapsed);
+//Process regular player movement in game
+void ProcessGameInput(float elapsed) {
+	const Uint8 *keys = SDL_GetKeyboardState(NULL);
+
+	if (keys[SDL_SCANCODE_RIGHT]) {
+		//state.player.position.x -= cos(90 * elapsed);
+		playerModelMatrix.Rotate(elapsed * (90 * (3.1415926/180)) * -1);
 	}
+	if (keys[SDL_SCANCODE_LEFT]) {
+		//state.player.position.x += cos(90 * elapsed);
+		playerModelMatrix.Rotate(elapsed * (90 * (3.1415926 / 180)));
+	}
+}
+
+void Update(float elapsed) {
+	state.player.Update(elapsed);
+	state.enemies[0].Update(elapsed);
+	if (state.player.CollidesWith(&state.enemies[0])) {
+		state.player.velocity.y = 1.2;
+		state.player.acceleration.y *= -1.0;
+	}
+
+}
+
+
+void Render(ShaderProgram *program) {
+	playerModelMatrix.SetPosition(state.player.position.x, state.player.position.y, 0.0);
+	program->SetModelMatrix(playerModelMatrix);
+	state.player.Draw(program);
+
+	enemyModelMatrix.SetPosition(state.enemies[0].position.x, state.enemies[0].position.y, 0.0);
+	program->SetModelMatrix(enemyModelMatrix);
+	state.enemies[0].Draw(program);
+
+
+	
 }
 
 int main(int argc, char *argv[])
 {
 	SDL_Init(SDL_INIT_VIDEO);
 
-	displayWindow = SDL_CreateWindow("Assignment 3: Space Invaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640 * 2, 360 * 2, SDL_WINDOW_OPENGL);
+	displayWindow = SDL_CreateWindow("Assignment 4: Platformer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640 * 2, 360 * 2, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
 	SDL_GL_MakeCurrent(displayWindow, context);
 
@@ -252,39 +314,33 @@ int main(int argc, char *argv[])
 	program.Load(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 
 	//Setting up the Sprite sheet
-	GLuint spriteSheetTexture = LoadTexture("sheet.png");
-	GLuint textTex = LoadTexture("font1.png");
+	spriteSheetTexture = LoadTexture("sheet.png");
+	textTex = LoadTexture("font1.png");
+
 	//playerShip2_red.png (line 224)
-	Entity player; 
-	player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
-	/*
-	player.position.x = 0;
-	player.position.y = 0;
-	player.position.z = 0;
-	player.size.x = 112.0 / 1024.0;
-	player.size.y = 75.0 / 1024.0;
-	player.size.z = 0;
-	*/
+	state.player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
+	state.player.position.x = 0;
+	state.player.position.y = 0;
+	state.player.position.z = 0;
+	state.player.velocity.x = 0.0;
+	state.player.velocity.y = 0.0;
+	state.player.velocity.z = 0.0;
+	state.player.acceleration.x = 0.0;
+	state.player.acceleration.y = -1.81;
+	state.player.size.x = 0.3;
+	state.player.size.y = 0.3;
+	state.player.size.z = 0.0;
+	state.player.enityType = ENTITY_PLAYER;
 
-	//enemyBlack3.png (line 55)
-	Entity enemy;
-	enemy.sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
-
-	//enemyBlue4.png (line 4)
-	SheetSprite enemy2 = SheetSprite(spriteSheetTexture, 518.0 / 1024.0, 409.0 / 1024.0, 82.0 / 1024.0, 84.0 / 1024.0, 0.3);
-
-	//enemyGreen5.png (line 70)
-	SheetSprite enemy3 = SheetSprite(spriteSheetTexture, 408.0/ 1024.0, 907.0 / 1024.0, 97.0/ 1024.0, 84.0/ 1024.0, 0.3);
-
-	//enemyRed1.png (line 74)
-	SheetSprite enemy4 = SheetSprite(spriteSheetTexture, 425.0 / 1024.0, 384.0 / 1024.0, 93.0/ 1024.0, 84.0 / 1024.0, 0.3);
-
-	//Load the matrices
-	Matrix projectionMatrix;
-	Matrix modelMatrix;
-	Matrix viewMatrix;
-	Matrix playerModelMatrix;
-	Matrix enemyModelMatrix;
+	//Set up an enemy
+	state.enemies[0].sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
+	state.enemies[0].position.x = 0.0;
+	state.enemies[0].position.y = -1.0;
+	state.enemies[0].position.z = 0.0;
+	state.enemies[0].size.x = 0.3;
+	state.enemies[0].size.y = 0.3;
+	state.enemies[0].size.z = 0.0;
+	state.enemies[0].enityType = ENTITY_ENEMY;
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-5.33f, 5.33f, -3.0f, 3.0f, -1.0f, 1.0f);
@@ -303,10 +359,6 @@ int main(int argc, char *argv[])
 
 	//Set clear color of screen
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		
-	//Setup initial player position
-	playerModelMatrix.Translate(0, -2.25, 0);
-	program.SetModelMatrix(playerModelMatrix);
 
 	mode = STATE_GAME_LEVEL;
 
@@ -319,14 +371,7 @@ int main(int argc, char *argv[])
 				done = true;
 			}
 
-			switch (mode) {
-			case STATE_MAIN_MENU:
-				ProcessMenuPollingInput(event);
-				spaceDown = true;
-			case STATE_GAME_LEVEL: 
-				ProcessGamePollingInput(event, playerModelMatrix, spaceDown);
-			}
-
+			ProcessGamePollingInput(event, spaceDown);
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -334,43 +379,29 @@ int main(int argc, char *argv[])
 		//Use the specified program ID
 		glUseProgram(program.programID);
 
-		float ticks = (float)SDL_GetTicks() / 1000.0;
-		float elapsed = ticks - lastFrameTicks;
-		lastFrameTicks = ticks;
-
-		//Keeping time with a fixed timestep
-		/*elapsed += accumulator;
-		if (elapsed < FIXED_TIMESTEP) {
-			accumulator = elapsed;
-			continue;
-		}
-		while (elapsed >= FIXED_TIMESTEP) {
-			//Update(FIXED_TIMESTEP);
-			elapsed -= FIXED_TIMESTEP;
-		}
-		accumulator = elapsed;
-		//Render();
-		*/
-
-
-
 		//Pass the matrices to our program
 		program.SetModelMatrix(modelMatrix);
 		program.SetProjectionMatrix(projectionMatrix);
 		program.SetViewMatrix(viewMatrix);
 
-		ProcessInput(playerModelMatrix, elapsed);
-		program.SetModelMatrix(playerModelMatrix);
-		player.Draw(&program);
+		float ticks = (float)SDL_GetTicks() / 1000.0;
+		float elapsed = ticks - lastFrameTicks;
+		lastFrameTicks = ticks;
 
-		enemyModelMatrix.Translate(0.001, 0, 0);
-		program.SetModelMatrix(enemyModelMatrix);
-		enemy.Draw(&program);
-		
-		program.SetModelMatrix(modelMatrix);
-		std::string hello = "hello";
+		//Keeping time with a fixed timestep
+		elapsed += accumulator;
+		if (elapsed < FIXED_TIMESTEP) {
+			accumulator = elapsed;
+			continue;
+		}
+		while (elapsed >= FIXED_TIMESTEP) {
+			ProcessGameInput(FIXED_TIMESTEP);
+			Update(FIXED_TIMESTEP);
+			elapsed -= FIXED_TIMESTEP;
+		}
+		accumulator = elapsed;
 
-		DrawText(&program, textTex, "Space Invaders:", 0.5, -0.25);  
+		Render(&program);
 
 		SDL_GL_SwapWindow(displayWindow);
 	}
