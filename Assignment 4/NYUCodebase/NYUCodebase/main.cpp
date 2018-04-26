@@ -14,14 +14,18 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <vector>
 
 //60 FPS (1 / 60) (update sixty times a second)
 #define FIXED_TIMESTEP 0.01666666
 #define MAX_TIMESTEPS 6
 
 //Level Width and Height
-#define LEVEL_WIDTH 16
-#define LEVEL_HEIGHT 22
+#define LEVEL_WIDTH 5
+#define LEVEL_HEIGHT 5
+#define SPRITE_COUNT_X 30
+#define SPRITE_COUNT_Y 30
+#define TILE_SIZE float(0.5)
 
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
@@ -29,7 +33,14 @@
 #define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
 #endif
 
-unsigned int levelData[LEVEL_HEIGHT][LEVEL_WIDTH];
+unsigned int levelData[LEVEL_HEIGHT][LEVEL_WIDTH] = 
+{
+	{1,4,1,1,1},
+	{1,1,1,1,1},
+	{ 1,1,16,1,1 },
+	{ 1,7,10,1,1 },
+	{ 1,9,1,1,1 }
+};
 
 SDL_Window* displayWindow;
 
@@ -51,65 +62,112 @@ GLuint LoadTexture(const char *filePath) {
 	return retTexture;
 }
 
-//Sprite class to make objects out of sprite sheets
+//Uniform Sprite class to make objects out of sprite sheets
 class SheetSprite {
 public:
-	SheetSprite() {};
-	SheetSprite(unsigned int textureID, float u, float v, float width, float height, float size) : textureID(textureID), u(u), v(v), width(width), height(height), size(size) {}
-
-	void Draw(ShaderProgram *program);
-
+	SheetSprite() : textureID(0), size(0), index(0), spriteCountX(0), spriteCountY(0) {};
+	SheetSprite(unsigned int textureID, int index, float size) : textureID(textureID), index(index), size(size), spriteCountX(SPRITE_COUNT_X), spriteCountY(SPRITE_COUNT_Y) {};												
+	void Draw(ShaderProgram* program) const;
 	float size;
 	unsigned int textureID;
-	float u;
-	float v;
-	float height;
-	float width;
+	int index;
+	int spriteCountX;
+	int spriteCountY;
 };
 
 //Draw, bind texture to sprite and draw it
-void SheetSprite::Draw(ShaderProgram *program) {
-	glBindTexture(GL_TEXTURE_2D, textureID);
+void SheetSprite::Draw(ShaderProgram* program) const {
+	if (index >= 0) {
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		float u = (float)(((int)index) % spriteCountX) / (float)spriteCountX;
+		float v = (float)(((int)index) / spriteCountX) / (float)spriteCountY;
+		float spriteWidth = 1.0 / (float)spriteCountX;
+		float spriteHeight = 1.0 / (float)spriteCountY;
 
-	GLfloat texCoords[] = {
-		u, v + height,
-		u + width, v,
-		u, v,
-		u + width, v,
-		u, v + height,
-		u + width, v + height
-	};
+		float texCoords[] = {
+			u, v + spriteHeight,
+			u + spriteWidth, v,
+			u, v,
+			u + spriteWidth, v,
+			u, v + spriteHeight,
+			u + spriteWidth, v + spriteHeight
+		};
+		float vertices[] = {
+			-0.5f*size, -0.5f*size,
+			0.5f*size, 0.5f*size,
+			-0.5f*size, 0.5f*size,
+			0.5f*size, 0.5f*size,
+			-0.5f*size,-0.5f*size,
+			0.5f*size, -0.5f*size };
 
-	float aspect = width / height; 
-	float vertices[] = {
-		-0.5f * size * aspect, -0.5f * size,
-		0.5f * size * aspect, 0.5f * size,
-		-0.5f * size * aspect, 0.5f * size,
-		0.5f * size * aspect, 0.5f * size,
-		-0.5f * size * aspect, -0.5f * size,
-		0.5f * size * aspect, -0.5f * size
-	};
+		// draw this data
+		glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
+		glEnableVertexAttribArray(program->positionAttribute);
+		glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
+		glEnableVertexAttribArray(program->texCoordAttribute);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDisableVertexAttribArray(program->positionAttribute);
+		glDisableVertexAttribArray(program->texCoordAttribute);
+	}
 
-	//draw our arrays
-	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
-	glEnableVertexAttribArray(program->positionAttribute);
-	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
-	glEnableVertexAttribArray(program->texCoordAttribute);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glDisableVertexAttribArray(program->positionAttribute);
-	glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
 //Simple vector class
 class Vector3 {
 public:
-	Vector3() {};
+	Vector3():  x(0), y(0), z(0) {}
 	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 
 	float x;
 	float y;
 	float z;
 };
+
+void DrawMap(ShaderProgram *program, int texture) {
+	std::vector<float> vertexData;
+	std::vector<float> texCoordData;
+	for (int y = 0; y < LEVEL_HEIGHT; y++) {
+		for (int x = 0; x < LEVEL_WIDTH; x++) {
+			if (levelData[y][x] != 0) {
+				float u = (float)(((int)levelData[y][x]) % SPRITE_COUNT_X) / (float)SPRITE_COUNT_X;
+				float v = (float)(((int)levelData[y][x]) / SPRITE_COUNT_X) / (float)SPRITE_COUNT_Y;
+				float spriteWidth = 1.0f / (float)SPRITE_COUNT_X;
+				float spriteHeight = 1.0f / (float)SPRITE_COUNT_Y;
+				vertexData.insert(vertexData.end(), {
+					TILE_SIZE * x, -TILE_SIZE * y,
+					TILE_SIZE * x, (-TILE_SIZE * y) - TILE_SIZE,
+					(TILE_SIZE * x) + TILE_SIZE, (-TILE_SIZE * y) - TILE_SIZE,
+					TILE_SIZE * x, -TILE_SIZE * y,
+					(TILE_SIZE * x) + TILE_SIZE, (-TILE_SIZE * y) - TILE_SIZE,
+					(TILE_SIZE * x) + TILE_SIZE, -TILE_SIZE * y
+					});
+				texCoordData.insert(texCoordData.end(), {
+					u, v,
+					u, v + (spriteHeight),
+					u + spriteWidth, v + (spriteHeight),
+					u, v,
+					u + spriteWidth, v + (spriteHeight),
+					u + spriteWidth, v
+					});
+			}
+		}
+	}
+	//glBindTexture(GL_TEXTURE_2D, texture);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+
+	//Draw this data 
+	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());
+	glEnableVertexAttribArray(program->positionAttribute);
+	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoordData.data());
+	glEnableVertexAttribArray(program->texCoordAttribute);
+
+	glDrawArrays(GL_TRIANGLES, 0, vertexData.size() / 2);
+
+	glDisableVertexAttribArray(program->positionAttribute);
+	glDisableVertexAttribArray(program->texCoordAttribute);
+
+}
 
 void DrawText(ShaderProgram *program, int fontTexture, std::string text, float size, float spacing) {
 	float texture_size = 1.0 / 16.0f;
@@ -174,14 +232,13 @@ public:
 		velocity.z = 0.0;
 
 		velocity.y += acceleration.y * elapsed;
-
 		velocity.x += acceleration.x * elapsed; 
-
-
 		velocity.z = 0.0;
 
+		position.y += velocity.y * elapsed;
+
 		position.x += velocity.x * elapsed;
-		position.y += velocity.y * elapsed; 
+ 
 		position.z += velocity.z * elapsed;
 	}
 
@@ -194,10 +251,25 @@ public:
 			(position.x - (size.x / 2)) > (entity->position.x + (entity->size.x / 2)) ||
 			//R1 right < R2 left
 			(position.x + (size.x / 2)) < (entity->position.x - (entity->size.x / 2))) {
-			
+			collidedBottom = false;
+			collidedTop = false;
+			collidedLeft = false;
+			collidedRight = false;
 			return false;
 		}
 		else {
+			if ((position.y - (size.y / 2)) <= (entity->position.y + (entity->size.y / 2))) {
+				collidedBottom = true;
+			}
+			if ((position.y + (size.y / 2)) >= (entity->position.y - (entity->size.y / 2))) {
+				collidedTop = true;
+			}
+			if ((position.x - (size.x / 2)) <= (entity->position.x + (entity->size.x / 2))) {
+				collidedRight = true;
+			}
+			if ((position.x + (size.x / 2)) >= (entity->position.x - (entity->size.x / 2))) {
+				collidedLeft = true;
+			}
 			return true;
 		}
 
@@ -236,6 +308,7 @@ GameState state;
 
 GLuint spriteSheetTexture;
 GLuint textTex;
+GLuint tileTexture;
 
 //Load the matrices
 Matrix projectionMatrix;
@@ -244,6 +317,7 @@ Matrix viewMatrix;
 Matrix playerModelMatrix;
 Matrix enemyModelMatrix;
 Matrix titleModelMatrix;
+Matrix tileModelMatrix;
 
 //Process polling events for game (shooting)
 void ProcessGamePollingInput(SDL_Event& event, bool& prevPressed) {
@@ -276,12 +350,6 @@ void ProcessGameInput(float elapsed) {
 
 void Update(float elapsed) {
 	state.player.Update(elapsed);
-	state.enemies[0].Update(elapsed);
-	if (state.player.CollidesWith(&state.enemies[0])) {
-		state.player.acceleration.y *= -1.0;
-		state.player.velocity.y *= -1;
-		
-	}
 
 }
 
@@ -291,12 +359,8 @@ void Render(ShaderProgram *program) {
 	program->SetModelMatrix(playerModelMatrix);
 	state.player.Draw(program);
 
-	enemyModelMatrix.SetPosition(state.enemies[0].position.x, state.enemies[0].position.y, 0.0);
-	program->SetModelMatrix(enemyModelMatrix);
-	state.enemies[0].Draw(program);
-
-
-	
+	program->SetModelMatrix(tileModelMatrix);
+	DrawMap(program, tileTexture);
 }
 
 int main(int argc, char *argv[])
@@ -320,33 +384,16 @@ int main(int argc, char *argv[])
 	program.Load(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 
 	//Setting up the Sprite sheet
-	spriteSheetTexture = LoadTexture("sheet.png");
+	spriteSheetTexture = LoadTexture("spritesheet_rgba.png");
 	textTex = LoadTexture("font1.png");
 
 	//playerShip2_red.png (line 224)
-	state.player.sprite = SheetSprite(spriteSheetTexture, 0/1024.0, 941.0/1024.0, 112.0/1024.0, 75.0/1024.0, 0.3);
-	state.player.position.x = 0;
-	state.player.position.y = 0;
-	state.player.position.z = 0;
-	state.player.velocity.x = 0.0;
-	state.player.velocity.y = 0.0;
-	state.player.velocity.z = 0.0;
+	state.player.sprite = SheetSprite(spriteSheetTexture, 19, 0.5);
 	state.player.acceleration.x = 0.0;
-	state.player.acceleration.y = -3.0;
-	state.player.size.x = 0.3;
-	state.player.size.y = 0.3;
-	state.player.size.z = 0.0;
+	state.player.size.x = 0.5;
+	state.player.size.y = 0.5;
+	state.player.isStatic = false;
 	state.player.enityType = ENTITY_PLAYER;
-
-	//Set up an enemy
-	state.enemies[0].sprite = SheetSprite(spriteSheetTexture, 144.0 / 1024.0, 156.0 / 1024.0, 103.0 / 1024.0, 84.0 / 1024.0, 0.3);
-	state.enemies[0].position.x = 0.0;
-	state.enemies[0].position.y = -1.0;
-	state.enemies[0].position.z = 0.0;
-	state.enemies[0].size.x = 0.3;
-	state.enemies[0].size.y = 0.3;
-	state.enemies[0].size.z = 0.0;
-	state.enemies[0].enityType = ENTITY_ENEMY;
 
 	//Sets an orthographic projection in a matrix
 	projectionMatrix.SetOrthoProjection(-5.33f, 5.33f, -3.0f, 3.0f, -1.0f, 1.0f);
@@ -367,6 +414,8 @@ int main(int argc, char *argv[])
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	mode = STATE_GAME_LEVEL;
+
+	
 
 	SDL_Event event;
 	bool done = false;
