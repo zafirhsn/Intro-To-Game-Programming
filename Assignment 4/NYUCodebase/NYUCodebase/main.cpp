@@ -19,12 +19,17 @@
 #define FIXED_TIMESTEP 0.01666666
 #define MAX_TIMESTEPS 6
 
+//Level Width and Height
+#define LEVEL_WIDTH 16
+#define LEVEL_HEIGHT 22
+
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
 #else
 #define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
 #endif
 
+unsigned int levelData[LEVEL_HEIGHT][LEVEL_WIDTH];
 
 SDL_Window* displayWindow;
 
@@ -273,8 +278,9 @@ void Update(float elapsed) {
 	state.player.Update(elapsed);
 	state.enemies[0].Update(elapsed);
 	if (state.player.CollidesWith(&state.enemies[0])) {
-		state.player.velocity.y = 1.2;
 		state.player.acceleration.y *= -1.0;
+		state.player.velocity.y *= -1;
+		
 	}
 
 }
@@ -326,7 +332,7 @@ int main(int argc, char *argv[])
 	state.player.velocity.y = 0.0;
 	state.player.velocity.z = 0.0;
 	state.player.acceleration.x = 0.0;
-	state.player.acceleration.y = -1.81;
+	state.player.acceleration.y = -3.0;
 	state.player.size.x = 0.3;
 	state.player.size.y = 0.3;
 	state.player.size.z = 0.0;
