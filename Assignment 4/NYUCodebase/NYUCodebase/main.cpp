@@ -21,11 +21,11 @@
 #define MAX_TIMESTEPS 6
 
 //Level Width and Height
-#define LEVEL_WIDTH 5
+#define LEVEL_WIDTH 30
 #define LEVEL_HEIGHT 5
 #define SPRITE_COUNT_X 30
 #define SPRITE_COUNT_Y 30
-#define TILE_SIZE float(0.5)
+#define TILE_SIZE float(0.3)
 
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
@@ -33,13 +33,15 @@
 #define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
 #endif
 
+std::vector<int> solidTiles { 123, 151, 152, 153, 154, 155, 156, 157, 158, 159, 181, 182, 183, 184, 185, 186, 187, 188, 189 };
+
 unsigned int levelData[LEVEL_HEIGHT][LEVEL_WIDTH] = 
 {
-	{1,4,1,1,1},
-	{1,1,1,1,1},
-	{ 1,1,16,1,1 },
-	{ 1,7,10,1,1 },
-	{ 1,9,1,1,1 }
+	{ 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123 },
+	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
+	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
+	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
+	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
 };
 
 SDL_Window* displayWindow;
@@ -211,10 +213,13 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
 
 }
 
-
-
 float lerp(float v0, float v1, float t) {
 	return (1.0 - t)*v0 + t * v1;
+}
+
+void worldToTileCoordinates(float worldX, float worldY, int *gridX, int *gridY) {
+	*gridX = (int)(worldX / TILE_SIZE);
+	*gridY = (int)(-worldY / TILE_SIZE);
 }
 
 enum EntityType { ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_COIN };
@@ -227,8 +232,8 @@ public:
 	}
 
 	void Update(float elapsed) {
-		velocity.x = lerp(velocity.x, 0.0, elapsed * 0.1);
-		velocity.y = lerp(velocity.y, 0.0, elapsed * 0.1);
+		velocity.x = lerp(velocity.x, 0.0, elapsed * 0.95);
+		velocity.y = lerp(velocity.y, 0.0, elapsed * 0.95);
 		velocity.z = 0.0;
 
 		velocity.y += acceleration.y * elapsed;
@@ -257,22 +262,6 @@ public:
 			collidedRight = false;
 			return false;
 		}
-		else {
-			if ((position.y - (size.y / 2)) <= (entity->position.y + (entity->size.y / 2))) {
-				collidedBottom = true;
-			}
-			if ((position.y + (size.y / 2)) >= (entity->position.y - (entity->size.y / 2))) {
-				collidedTop = true;
-			}
-			if ((position.x - (size.x / 2)) <= (entity->position.x + (entity->size.x / 2))) {
-				collidedRight = true;
-			}
-			if ((position.x + (size.x / 2)) >= (entity->position.x - (entity->size.x / 2))) {
-				collidedLeft = true;
-			}
-			return true;
-		}
-
 	}
 
 	Vector3 position;
@@ -322,8 +311,8 @@ Matrix tileModelMatrix;
 //Process polling events for game (shooting)
 void ProcessGamePollingInput(SDL_Event& event, bool& prevPressed) {
 	if (event.type == SDL_KEYDOWN && prevPressed == false) {
-		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
-			state.player.velocity.y = 1.5;
+		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE && state.player.collidedBottom) {
+			state.player.velocity.y = 3.5;
 			prevPressed = true;
 		}
 	}
@@ -335,21 +324,70 @@ void ProcessGamePollingInput(SDL_Event& event, bool& prevPressed) {
 }
 
 //Process regular player movement in game
-void ProcessGameInput(float elapsed) {
-	const Uint8 *keys = SDL_GetKeyboardState(NULL);
+void ProcessGameInput() {
+	const int runAnimation[] = { 19, 20, 28, 29 };
+	const int numFrames = 4; 
+	int currentIndex = 0;
 
+	const Uint8 *keys = SDL_GetKeyboardState(NULL);
 	if (keys[SDL_SCANCODE_RIGHT]) {
-		//state.player.position.x -= cos(90 * elapsed);
-		playerModelMatrix.Rotate(elapsed * (90 * (3.1415926/180)) * -1);
+		state.player.sprite = SheetSprite(spriteSheetTexture, runAnimation[1], 0.3);
+		state.player.acceleration.x = 4.0;
+		currentIndex++;
+		if (currentIndex > numFrames - 1) {
+			currentIndex = 0;
+		}
 	}
-	if (keys[SDL_SCANCODE_LEFT]) {
-		//state.player.position.x += cos(90 * elapsed);
-		playerModelMatrix.Rotate(elapsed * (90 * (3.1415926 / 180)));
+	else if (keys[SDL_SCANCODE_LEFT]) {
+		state.player.sprite = SheetSprite(spriteSheetTexture, runAnimation[0], 0.3);
+		state.player.acceleration.x = -4.0;
+	}
+	else {
+		state.player.acceleration.x = 0.0;
 	}
 }
 
 void Update(float elapsed) {
+	int gridX;
+	int gridY;
 	state.player.Update(elapsed);
+	state.player.collidedBottom = false;
+
+	float playerTop = state.player.position.y + (state.player.size.y / 2);
+	float playerBottom = state.player.position.y - (state.player.size.y / 2);
+	float playerLeft = state.player.position.x - (state.player.size.x / 2);
+	float playerRight = state.player.position.x + (state.player.size.x / 2);
+
+	worldToTileCoordinates(state.player.position.x, playerBottom, &gridX, &gridY);
+	if (gridY < LEVEL_HEIGHT && gridY >= 0 && gridX < LEVEL_WIDTH && gridX >= 0) {
+		if (levelData[gridY][gridX] == 123 || levelData[gridY][gridX] == 152) {
+
+			float tileLeft = (float)gridX * TILE_SIZE;
+			float tileRight = ((float)gridX + 1.0f) * TILE_SIZE;
+			float tileTop = (float)(-gridY) * TILE_SIZE;
+			float tileBottom = ((float)(-gridY) - 1.0f) * TILE_SIZE;
+
+			if (!(playerBottom > tileTop ||
+				playerTop < tileBottom ||
+				playerLeft > tileRight ||
+				playerRight < tileLeft)) {
+				float penetrationY = fabs(playerBottom - tileTop);
+				state.player.position.y += penetrationY + 0.001f;
+
+				state.player.collidedBottom = true;
+				if (state.player.velocity.y <= 0.0) {
+					state.player.velocity.y = 0.0;
+				}
+
+			}
+
+		}
+	}
+
+	if (state.player.position.x >= 4.8) {
+		viewMatrix.SetPosition(state.player.position.x * -1, -1.0, 0.0);
+	}
+
 
 }
 
@@ -359,8 +397,10 @@ void Render(ShaderProgram *program) {
 	program->SetModelMatrix(playerModelMatrix);
 	state.player.Draw(program);
 
+	tileModelMatrix.SetPosition(1.0, 0.0, 0.0);
 	program->SetModelMatrix(tileModelMatrix);
 	DrawMap(program, tileTexture);
+
 }
 
 int main(int argc, char *argv[])
@@ -388,11 +428,14 @@ int main(int argc, char *argv[])
 	textTex = LoadTexture("font1.png");
 
 	//playerShip2_red.png (line 224)
-	state.player.sprite = SheetSprite(spriteSheetTexture, 19, 0.5);
-	state.player.acceleration.x = 0.0;
-	state.player.size.x = 0.5;
-	state.player.size.y = 0.5;
+	state.player.sprite = SheetSprite(spriteSheetTexture, 19, 0.3);
+	state.player.acceleration.y = -9.81;
+	state.player.position.y = 2.0;
+	state.player.position.x = 1.0;  
+	state.player.size.x = 0.3;
+	state.player.size.y = 0.3;
 	state.player.isStatic = false;
+	state.player.collidedBottom = false;
 	state.player.enityType = ENTITY_PLAYER;
 
 	//Sets an orthographic projection in a matrix
@@ -412,6 +455,8 @@ int main(int argc, char *argv[])
 
 	//Set clear color of screen
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	viewMatrix.SetPosition(0.0, -1.0, 0.0); 
 
 	mode = STATE_GAME_LEVEL;
 
@@ -443,6 +488,8 @@ int main(int argc, char *argv[])
 		float elapsed = ticks - lastFrameTicks;
 		lastFrameTicks = ticks;
 
+		ProcessGameInput();
+
 		//Keeping time with a fixed timestep
 		elapsed += accumulator;
 		if (elapsed < FIXED_TIMESTEP) {
@@ -450,7 +497,6 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		while (elapsed >= FIXED_TIMESTEP) {
-			ProcessGameInput(FIXED_TIMESTEP);
 			Update(FIXED_TIMESTEP);
 			elapsed -= FIXED_TIMESTEP;
 		}
