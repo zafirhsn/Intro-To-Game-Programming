@@ -37,8 +37,8 @@ std::vector<int> solidTiles { 123, 151, 152, 153, 154, 155, 156, 157, 158, 159, 
 
 unsigned int levelData[LEVEL_HEIGHT][LEVEL_WIDTH] = 
 {
-	{ 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123 },
-	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
+	{ 123, 0,   123, 123, 123, 123, 123, 123, 123, 123, 123,   0,   0,   0,   0,   0, 123, 123, 123, 123, 123, 123,   0,   0,   0,   0,   0, 123, 123, 123 },
+	{ 152, 123, 152, 152, 152, 152, 152, 152, 152, 152, 152, 123, 123, 123, 123, 123, 152, 152, 152, 152, 152, 152, 123, 123, 123, 123, 123, 152, 152, 152 },
 	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
 	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
 	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
@@ -155,8 +155,9 @@ void DrawMap(ShaderProgram *program, int texture) {
 		}
 	}
 	//glBindTexture(GL_TEXTURE_2D, texture);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
 
 	//Draw this data 
 	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());
@@ -397,7 +398,7 @@ void Render(ShaderProgram *program) {
 	program->SetModelMatrix(playerModelMatrix);
 	state.player.Draw(program);
 
-	tileModelMatrix.SetPosition(1.0, 0.0, 0.0);
+	tileModelMatrix.SetPosition(0.0, 0.0, 0.0);
 	program->SetModelMatrix(tileModelMatrix);
 	DrawMap(program, tileTexture);
 
@@ -456,7 +457,7 @@ int main(int argc, char *argv[])
 	//Set clear color of screen
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-	viewMatrix.SetPosition(0.0, -1.0, 0.0); 
+	viewMatrix.SetPosition(-5.0, -1.0, 0.0); 
 
 	mode = STATE_GAME_LEVEL;
 

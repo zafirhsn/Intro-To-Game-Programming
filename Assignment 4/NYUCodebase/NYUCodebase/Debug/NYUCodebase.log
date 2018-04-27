@@ -1,17 +1,17 @@
 ﻿  main.cpp
 c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(86): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(87): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(178): warning C4018: '<': signed/unsigned mismatch
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(217): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(235): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(179): warning C4018: '<': signed/unsigned mismatch
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(218): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
 c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(236): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(334): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(342): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(431): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(432): warning C4305: '=': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(435): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(237): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(335): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(343): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(432): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(433): warning C4305: '=': truncation from 'double' to 'float'
 c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(436): warning C4305: '=': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(487): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(500): warning C4305: 'argument': truncation from 'double' to 'float'
-c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(501): warning C4305: '-=': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(437): warning C4305: '=': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(488): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(501): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\zafir\intro-to-game-programming\assignment 4\nyucodebase\nyucodebase\main.cpp(502): warning C4305: '-=': truncation from 'double' to 'float'
   NYUCodebase.vcxproj -> C:\Users\zafir\Intro-To-Game-Programming\Assignment 4\NYUCodebase\Debug\NYUCodebase.exe
