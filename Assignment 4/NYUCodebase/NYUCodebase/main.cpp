@@ -7,6 +7,7 @@
 #include <SDL_opengl.h>
 #include <SDL_image.h>
 #include "ShaderProgram.h"
+//#include "SheetSprite.h"
 #include "Matrix.h"
 #include "stb_image.h"
 #include <vector>
@@ -21,7 +22,7 @@
 #define MAX_TIMESTEPS 6
 
 //Level Width and Height
-#define LEVEL_WIDTH 30
+#define LEVEL_WIDTH 40
 #define LEVEL_HEIGHT 5
 #define SPRITE_COUNT_X 30
 #define SPRITE_COUNT_Y 30
@@ -33,15 +34,27 @@
 #define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
 #endif
 
-std::vector<int> solidTiles { 123, 151, 152, 153, 154, 155, 156, 157, 158, 159, 181, 182, 183, 184, 185, 186, 187, 188, 189 };
+std::vector<int> solidTiles { 
+	1, 2, 3, 4, 5, 8, 9, 
+	31, 32, 33, 34, 35, 38, 39, 
+	61, 62, 63, 64, 65, 68, 69, 
+	91, 92, 93, 94, 95, 98, 99, 
+	121, 122, 123, 124, 125, 128, 129, 
+	151, 152, 153, 154, 155, 158, 159, 
+	181, 182, 183, 184, 185, 188, 189,
+	211, 212, 213, 214, 215, 218, 219,
+	241, 242, 243, 244, 245, 248, 249, 
+	271, 272, 273, 274, 275, 278, 279, 
+	301, 302, 303, 304, 305, 308, 309
+};
 
 unsigned int levelData[LEVEL_HEIGHT][LEVEL_WIDTH] = 
 {
-	{ 123, 0,   123, 123, 123, 123, 123, 123, 123, 123, 123,   0,   0,   0,   0,   0, 123, 123, 123, 123, 123, 123,   0,   0,   0,   0,   0, 123, 123, 123 },
-	{ 152, 123, 152, 152, 152, 152, 152, 152, 152, 152, 152, 123, 123, 123, 123, 123, 152, 152, 152, 152, 152, 152, 123, 123, 123, 123, 123, 152, 152, 152 },
-	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
-	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
-	{ 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
+	{   0,   0,   0,   0,   0,   8,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 123, 123, 123, 123, 123 },
+	{   0,   0,   0,   0,   9,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  123, 123, 152, 152, 123, 123,   0,  0,   0,  123, 152, 152, 152, 152, 152 },
+	{   0,   0,   0,   8,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  152, 152, 152, 152, 152, 152, 123, 123, 123, 152, 152, 152, 152, 152, 152 },
+	{ 123, 155,   0,   0,   0,   0,   0,   0,   0,   1,   0,  61,  61,  61,   0,   0,  61,   0,  61,   0,  65,  61,  61,  95,   0,   65,  61,  61,  95, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 },
+	{ 152,   0,   8,   0,   8,   0,   8,   0,   8,   0,   8,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152, 152 }
 };
 
 SDL_Window* displayWindow;
@@ -68,7 +81,10 @@ GLuint LoadTexture(const char *filePath) {
 class SheetSprite {
 public:
 	SheetSprite() : textureID(0), size(0), index(0), spriteCountX(0), spriteCountY(0) {};
-	SheetSprite(unsigned int textureID, int index, float size) : textureID(textureID), index(index), size(size), spriteCountX(SPRITE_COUNT_X), spriteCountY(SPRITE_COUNT_Y) {};												
+
+	SheetSprite(unsigned int textureID, int index, int spriteCountX, int spriteCountY, float size) :
+		textureID(textureID), index(index), spriteCountX(spriteCountX), spriteCountY(spriteCountY), size(size) {};
+
 	void Draw(ShaderProgram* program) const;
 	float size;
 	unsigned int textureID;
@@ -223,6 +239,15 @@ void worldToTileCoordinates(float worldX, float worldY, int *gridX, int *gridY) 
 	*gridY = (int)(-worldY / TILE_SIZE);
 }
 
+bool isSolid(int gridX, int gridY) {
+	for (int i = 0; i < solidTiles.size(); i++) {
+		if (levelData[gridY][gridX] == solidTiles[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
 enum EntityType { ENTITY_PLAYER, ENTITY_ENEMY, ENTITY_COIN };
 
 class Entity {
@@ -233,8 +258,8 @@ public:
 	}
 
 	void Update(float elapsed) {
-		velocity.x = lerp(velocity.x, 0.0, elapsed * 0.95);
-		velocity.y = lerp(velocity.y, 0.0, elapsed * 0.95);
+		velocity.x = lerp(velocity.x, 0.0, elapsed * 3.50);
+		velocity.y = lerp(velocity.y, 0.0, elapsed * 0.5);
 		velocity.z = 0.0;
 
 		velocity.y += acceleration.y * elapsed;
@@ -264,6 +289,72 @@ public:
 			return false;
 		}
 	}
+
+	bool CollidesGrid(float worldX, float worldY, int *gridX, int *gridY) {
+
+		float playerTop = position.y + (size.y / 2);
+		float playerBottom = position.y - (size.y / 2);
+		float playerLeft = position.x - (size.x / 2);
+		float playerRight = position.x + (size.x / 2);
+
+		worldToTileCoordinates(worldX, worldY, gridX, gridY);
+
+		if (*gridY < LEVEL_HEIGHT && *gridY >= 0 && *gridX < LEVEL_WIDTH && *gridX >= 0) {
+			if (isSolid(*gridX, *gridY)) {
+
+				float tileLeft = (float)(*gridX) * TILE_SIZE;
+				float tileRight = ((float)(*gridX) + 1.0f) * TILE_SIZE;
+				float tileTop = (float)(-1 * (*gridY)) * TILE_SIZE;
+				float tileBottom = ((float)(-1 * (*gridY)) - 1.0f) * TILE_SIZE;
+
+				if (!(playerBottom > tileTop ||
+					playerTop < tileBottom ||
+					playerLeft > tileRight ||
+					playerRight < tileLeft)) {
+
+					return true; 
+				}
+				else {
+					return false;
+				}
+			}
+			return false;
+		}
+		return false;
+	}
+
+	/*
+	void UpdateGridCollision() {
+		int gridX;
+		int gridY;
+
+		float playerTop = state.player.position.y + (state.player.size.y / 2);
+		float playerBottom = state.player.position.y - (state.player.size.y / 2);
+		float playerLeft = state.player.position.x - (state.player.size.x / 2);
+		float playerRight = state.player.position.x + (state.player.size.x / 2);
+
+		float tileLeft;
+		float tileRight;
+		float tileTop;
+		float tileBottom;
+
+		if (state.player.CollidesGrid(state.player.position.x, playerBottom, &gridX, &gridY)) {
+
+			tileLeft = (float)(gridX)* TILE_SIZE;
+			tileRight = ((float)(gridX)+1.0f) * TILE_SIZE;
+			tileTop = (float)(-1 * (gridY)) * TILE_SIZE;
+			tileBottom = ((float)(-1 * (gridY)) - 1.0f) * TILE_SIZE;
+
+			float penetrationY = fabs(playerBottom - tileTop);
+			state.player.position.y += penetrationY + 0.001f;
+
+			state.player.collidedBottom = true;
+			if (state.player.velocity.y <= 0.0) {
+				state.player.velocity.y = 0.0;
+			}
+		}
+	}
+	*/
 
 	Vector3 position;
 	Vector3 velocity;
@@ -332,7 +423,7 @@ void ProcessGameInput() {
 
 	const Uint8 *keys = SDL_GetKeyboardState(NULL);
 	if (keys[SDL_SCANCODE_RIGHT]) {
-		state.player.sprite = SheetSprite(spriteSheetTexture, runAnimation[1], 0.3);
+		state.player.sprite = SheetSprite(spriteSheetTexture, 446, SPRITE_COUNT_X, SPRITE_COUNT_Y, 0.3);
 		state.player.acceleration.x = 4.0;
 		currentIndex++;
 		if (currentIndex > numFrames - 1) {
@@ -340,7 +431,7 @@ void ProcessGameInput() {
 		}
 	}
 	else if (keys[SDL_SCANCODE_LEFT]) {
-		state.player.sprite = SheetSprite(spriteSheetTexture, runAnimation[0], 0.3);
+		state.player.sprite = SheetSprite(spriteSheetTexture, 446, SPRITE_COUNT_X, SPRITE_COUNT_Y, 0.3);
 		state.player.acceleration.x = -4.0;
 	}
 	else {
@@ -352,37 +443,77 @@ void Update(float elapsed) {
 	int gridX;
 	int gridY;
 	state.player.Update(elapsed);
-	state.player.collidedBottom = false;
 
 	float playerTop = state.player.position.y + (state.player.size.y / 2);
 	float playerBottom = state.player.position.y - (state.player.size.y / 2);
 	float playerLeft = state.player.position.x - (state.player.size.x / 2);
 	float playerRight = state.player.position.x + (state.player.size.x / 2);
 
-	worldToTileCoordinates(state.player.position.x, playerBottom, &gridX, &gridY);
-	if (gridY < LEVEL_HEIGHT && gridY >= 0 && gridX < LEVEL_WIDTH && gridX >= 0) {
-		if (levelData[gridY][gridX] == 123 || levelData[gridY][gridX] == 152) {
+	float tileLeft;
+	float tileRight;
+	float tileTop;
+	float tileBottom;
 
-			float tileLeft = (float)gridX * TILE_SIZE;
-			float tileRight = ((float)gridX + 1.0f) * TILE_SIZE;
-			float tileTop = (float)(-gridY) * TILE_SIZE;
-			float tileBottom = ((float)(-gridY) - 1.0f) * TILE_SIZE;
+	state.player.collidedBottom = false;
+	state.player.collidedLeft = false;
+	state.player.collidedTop = false;
+	state.player.collidedRight = false;
 
-			if (!(playerBottom > tileTop ||
-				playerTop < tileBottom ||
-				playerLeft > tileRight ||
-				playerRight < tileLeft)) {
-				float penetrationY = fabs(playerBottom - tileTop);
-				state.player.position.y += penetrationY + 0.001f;
+	//Bottom collision
+	if (state.player.CollidesGrid(state.player.position.x, playerBottom, &gridX, &gridY)) {
 
-				state.player.collidedBottom = true;
-				if (state.player.velocity.y <= 0.0) {
-					state.player.velocity.y = 0.0;
-				}
+		tileLeft = (float)(gridX) * TILE_SIZE;
+		tileRight = ((float)(gridX) + 1.0f) * TILE_SIZE;
+		tileTop = (float)(-1 * (gridY)) * TILE_SIZE;
+		tileBottom = ((float)(-1 * (gridY)) - 1.0f) * TILE_SIZE;
 
-			}
+		float penetrationY = fabs(playerBottom - tileTop);
+		state.player.position.y += penetrationY + 0.0001f;
 
+		state.player.collidedBottom = true;
+		if (state.player.velocity.y <= 0.0) {
+			state.player.velocity.y = 0.0;
 		}
+	}
+
+	//Top collision
+	if (state.player.CollidesGrid(state.player.position.x, playerTop, &gridX, &gridY)) {
+		tileLeft = (float)(gridX)* TILE_SIZE;
+		tileRight = ((float)(gridX)+1.0f) * TILE_SIZE;
+		tileTop = (float)(-1 * (gridY)) * TILE_SIZE;
+		tileBottom = ((float)(-1 * (gridY)) - 1.0f) * TILE_SIZE;
+
+		float penetrationY = fabs(playerTop - tileBottom);
+		state.player.position.y -= (penetrationY + 0.0001);
+		state.player.acceleration.y = 0.0;
+
+		state.player.collidedTop = true;
+	}
+
+	//Right collision
+	if (state.player.CollidesGrid(playerRight, state.player.position.y, &gridX, &gridY)) {
+		tileLeft = (float)(gridX)* TILE_SIZE;
+		tileRight = ((float)(gridX)+1.0f) * TILE_SIZE;
+		tileTop = (float)(-1 * (gridY)) * TILE_SIZE;
+		tileBottom = ((float)(-1 * (gridY)) - 1.0f) * TILE_SIZE;
+		
+		float penetrationX = fabs(playerRight - tileLeft);
+		state.player.position.x -= (penetrationX + 0.0001);
+		state.player.acceleration.x = 0;
+		state.player.collidedRight = true;
+	}
+
+	//Left collision
+	if (state.player.CollidesGrid(playerLeft, state.player.position.y, &gridX, &gridY)) {
+		tileLeft = (float)(gridX)* TILE_SIZE;
+		tileRight = ((float)(gridX)+1.0f) * TILE_SIZE;
+		tileTop = (float)(-1 * (gridY)) * TILE_SIZE;
+		tileBottom = ((float)(-1 * (gridY)) - 1.0f) * TILE_SIZE;
+
+		float penetrationX = fabs(playerLeft - tileRight);
+		state.player.position.x += (penetrationX + 0.0001);
+		state.player.acceleration.x = 0;
+		state.player.collidedLeft = true;
 	}
 
 	if (state.player.position.x >= 4.8) {
@@ -429,7 +560,7 @@ int main(int argc, char *argv[])
 	textTex = LoadTexture("font1.png");
 
 	//playerShip2_red.png (line 224)
-	state.player.sprite = SheetSprite(spriteSheetTexture, 19, 0.3);
+	state.player.sprite = SheetSprite(spriteSheetTexture, 446, SPRITE_COUNT_X, SPRITE_COUNT_Y, 0.3);
 	state.player.acceleration.y = -9.81;
 	state.player.position.y = 2.0;
 	state.player.position.x = 1.0;  
